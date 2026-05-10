@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ChunkContainer } from './components/ChunkContainer';
 import { NoiseBackground } from './components/NoiseBackground';
 import { TimeChunk } from './types';
+import { ApiClient } from './api/client';
 
 const MOCK_CHUNK: TimeChunk = {
   user_id: 'user_1',
@@ -20,11 +21,14 @@ const MOCK_CHUNK: TimeChunk = {
 };
 
 const App = () => {
+  const apiClient = useMemo(() => new ApiClient('http://localhost:8000', 'user_1'), []);
+
   return (
     <GestureHandlerRootView style={styles.container}>
       <ChunkContainer 
         initialChunk={MOCK_CHUNK}
         totalDurationMinutes={120} // 2 hours
+        apiClient={apiClient}
       />
       <NoiseBackground />
     </GestureHandlerRootView>
