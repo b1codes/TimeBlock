@@ -148,3 +148,12 @@ vite.config.ts.timestamp-*
 __pycache__/
 *.py[cod]
 *.class
+
+# Frontend
+frontend/dist/
+frontend/.expo/
+frontend/.jest/
+
+# OS
+.DS_Store
+Thumbs.db
