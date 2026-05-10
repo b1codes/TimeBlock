@@ -143,6 +143,8 @@ vite.config.ts.timestamp-*
 .vite/
 
 # Python
+.venv/
+.pytest_cache/
 __pycache__/
 *.py[cod]
 *.class
