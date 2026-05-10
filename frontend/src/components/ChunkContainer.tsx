@@ -6,13 +6,15 @@ import { DraggableDivider } from './DraggableDivider';
 import { BalanceHeader } from './BalanceHeader';
 import { calculateZeroSumTasks } from '../utils/dragMath';
 import { theme } from '../styles/theme';
+import { ApiClient } from '../api/client';
 
 interface Props {
   initialChunk: TimeChunk;
   totalDurationMinutes: number;
+  apiClient: ApiClient;
 }
 
-export const ChunkContainer: React.FC<Props> = ({ initialChunk, totalDurationMinutes }) => {
+export const ChunkContainer: React.FC<Props> = ({ initialChunk, totalDurationMinutes, apiClient }) => {
   const [tasks, setTasks] = useState<Task[]>(initialChunk.tasks);
   const [limitedTaskIds, setLimitedTaskIds] = useState<Set<string>>(new Set());
 
@@ -22,6 +24,10 @@ export const ChunkContainer: React.FC<Props> = ({ initialChunk, totalDurationMin
   const handleDrag = (index: number, deltaMinutes: number) => {
     const updatedTasks = calculateZeroSumTasks(tasks, index, deltaMinutes);
     
+    if (updatedTasks === tasks) {
+      return;
+    }
+
     // Check if limits were hit
     const newLimitedIds = new Set<string>();
     if (updatedTasks[index].duration_minutes === tasks[index].duration_minutes && deltaMinutes !== 0) {
@@ -35,6 +41,9 @@ export const ChunkContainer: React.FC<Props> = ({ initialChunk, totalDurationMin
 
     setTasks(updatedTasks);
     setLimitedTaskIds(newLimitedIds);
+
+    // Sync with API
+    apiClient.debouncedUpdateChunkTasks(initialChunk.chunk_id, updatedTasks);
   };
 
   const handleDragEnd = () => {
