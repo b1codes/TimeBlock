@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { ChunkContainer } from './components/ChunkContainer';
-import { NoiseBackground } from './components/NoiseBackground';
-import { TimeChunk } from './types';
-import { ApiClient } from './api/client';
+import { ChunkContainer } from './src/components/ChunkContainer';
+import { NoiseBackground } from './src/components/NoiseBackground';
+import { TimeChunk } from './src/types';
+import { ApiClient } from './src/api/client';
 
 const MOCK_CHUNK: TimeChunk = {
   user_id: 'user_1',
@@ -25,12 +26,15 @@ const App = () => {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <ChunkContainer 
-        initialChunk={MOCK_CHUNK}
-        totalDurationMinutes={120} // 2 hours
-        apiClient={apiClient}
-      />
-      <NoiseBackground />
+      <View style={styles.inner}>
+        <ChunkContainer 
+          initialChunk={MOCK_CHUNK}
+          totalDurationMinutes={120} // 2 hours
+          apiClient={apiClient}
+        />
+        <NoiseBackground />
+      </View>
+      <StatusBar style="auto" />
     </GestureHandlerRootView>
   );
 };
@@ -39,6 +43,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  inner: {
+    flex: 1,
+    paddingTop: 40, // Space for status bar on some devices
+  }
 });
 
 export default App;
