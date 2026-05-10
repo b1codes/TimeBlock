@@ -8,7 +8,11 @@ interface Props {
 
 export const BalanceHeader: React.FC<Props> = ({ unassignedMinutes }) => {
   return (
-    <View style={styles.container}>
+    <View 
+      style={styles.container}
+      accessibilityRole="header"
+      accessibilityLabel={`Unassigned time: ${unassignedMinutes} minutes`}
+    >
       <Text style={styles.text}>Unassigned: {unassignedMinutes}m</Text>
     </View>
   );
@@ -21,11 +25,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
     alignItems: 'center',
-    zIndex: 10,
   },
   text: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    ...theme.typography.h2,
     color: theme.colors.primary,
   },
 });

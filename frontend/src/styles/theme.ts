@@ -27,5 +27,11 @@ export const theme = {
       shadowRadius: 8,
       elevation: 5,
     }
-  }
+  },
+  typography: {
+    h1: { fontSize: 24, fontWeight: 'bold' as const },
+    h2: { fontSize: 18, fontWeight: 'bold' as const },
+    body: { fontSize: 14, fontWeight: 'normal' as const },
+    caption: { fontSize: 12, fontWeight: 'normal' as const },
+  },
 };
