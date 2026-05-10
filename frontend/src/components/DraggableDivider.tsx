@@ -1,11 +1,11 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { PanGestureHandler, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler';
-import Animated, { useAnimatedGestureHandler } from 'react-native-reanimated';
+import Animated, { useAnimatedGestureHandler, runOnJS } from 'react-native-reanimated';
 import { theme } from '../styles/theme';
 
 interface Props {
-  onDrag: (deltaY: number) => void;
+  onDrag: (deltaMinutes: number) => void;
   onDragEnd: () => void;
 }
 
@@ -20,12 +20,12 @@ export const DraggableDivider: React.FC<Props> = ({ onDrag, onDragEnd }) => {
       const snapPx = theme.layout.snapIncrement * theme.layout.minutesToHeight;
       if (Math.abs(deltaY) >= snapPx) {
         const snapDelta = Math.round(deltaY / snapPx) * theme.layout.snapIncrement;
-        onDrag(snapDelta);
+        runOnJS(onDrag)(snapDelta);
         ctx.startY = event.translationY;
       }
     },
     onEnd: () => {
-      onDragEnd();
+      runOnJS(onDragEnd)();
     },
   });
 
