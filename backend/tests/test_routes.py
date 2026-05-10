@@ -18,7 +18,7 @@ def test_get_user_chunks(client, timechunk_table):
         'tasks': []
     })
     
-    response = client.get("/chunks/user123")
+    response = client.get("/chunks/", headers={"x-user-id": "user123"})
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
@@ -64,3 +64,17 @@ def test_update_chunk_tasks(client, timechunk_table):
     data = response.json()
     assert len(data['tasks']) == 1
     assert data['tasks'][0]['title'] == "Read"
+
+def test_update_missing_chunk(client, timechunk_table):
+    payload = {
+        "tasks": [
+            {
+                "title": "Read",
+                "duration_minutes": 20,
+                "min_duration": 10
+            }
+        ]
+    }
+    response = client.patch("/chunks/missing_chunk", json=payload, headers={"x-user-id": "user123"})
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Chunk not found"

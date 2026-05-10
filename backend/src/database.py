@@ -13,7 +13,14 @@ def get_chunks(user_id: str) -> list[TimeChunkResponse]:
     response = table.query(
         KeyConditionExpression=Key('user_id').eq(user_id)
     )
-    return [TimeChunkResponse(**item) for item in response.get('Items', [])]
+    items = response.get('Items', [])
+    while 'LastEvaluatedKey' in response:
+        response = table.query(
+            KeyConditionExpression=Key('user_id').eq(user_id),
+            ExclusiveStartKey=response['LastEvaluatedKey']
+        )
+        items.extend(response.get('Items', []))
+    return [TimeChunkResponse(**item) for item in items]
 
 def create_chunk(user_id: str, chunk: TimeChunkCreate) -> TimeChunkResponse:
     table = get_table()
@@ -37,6 +44,7 @@ def update_chunk_tasks(user_id: str, chunk_id: str, tasks: list[Task]) -> TimeCh
         Key={'user_id': user_id, 'chunk_id': chunk_id},
         UpdateExpression="SET tasks = :tasks",
         ExpressionAttributeValues={':tasks': tasks_dict},
+        ConditionExpression="attribute_exists(chunk_id)",
         ReturnValues="ALL_NEW"
     )
     return TimeChunkResponse(**response.get('Attributes', {}))
