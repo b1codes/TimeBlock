@@ -8,13 +8,11 @@ import { Task } from '../types';
  * @returns A new array of tasks with updated durations.
  */
 export function calculateZeroSumTasks(tasks: Task[], topTaskIndex: number, deltaMinutes: number): Task[] {
-  const newTasks = [...tasks.map(t => ({...t}))];
+  const topTaskOrig = tasks[topTaskIndex];
+  const bottomTaskOrig = tasks[topTaskIndex + 1];
   
-  const topTask = newTasks[topTaskIndex];
-  const bottomTask = newTasks[topTaskIndex + 1];
-  
-  if (!topTask || !bottomTask) {
-    return newTasks;
+  if (!topTaskOrig || !bottomTaskOrig) {
+    return tasks;
   }
 
   // Calculate the maximum allowed delta based on min_durations
@@ -22,21 +20,32 @@ export function calculateZeroSumTasks(tasks: Task[], topTaskIndex: number, delta
 
   if (deltaMinutes > 0) {
     // Divider moving down: top task grows, bottom task shrinks
-    const maxShrink = bottomTask.duration_minutes - bottomTask.min_duration;
+    const maxShrink = bottomTaskOrig.duration_minutes - bottomTaskOrig.min_duration;
     if (actualDelta > maxShrink) {
       actualDelta = maxShrink;
     }
   } else {
     // Divider moving up: top task shrinks, bottom task grows
     // delta is negative here
-    const maxShrink = topTask.duration_minutes - topTask.min_duration;
+    const maxShrink = topTaskOrig.duration_minutes - topTaskOrig.min_duration;
     if (Math.abs(actualDelta) > maxShrink) {
       actualDelta = -maxShrink;
     }
   }
 
-  topTask.duration_minutes += actualDelta;
-  bottomTask.duration_minutes -= actualDelta;
+  if (actualDelta === 0) {
+    return tasks;
+  }
+
+  const newTasks = [...tasks];
+  newTasks[topTaskIndex] = {
+    ...topTaskOrig,
+    duration_minutes: topTaskOrig.duration_minutes + actualDelta
+  };
+  newTasks[topTaskIndex + 1] = {
+    ...bottomTaskOrig,
+    duration_minutes: bottomTaskOrig.duration_minutes - actualDelta
+  };
 
   return newTasks;
 }

@@ -29,4 +29,17 @@ describe('calculateZeroSumTasks', () => {
     expect(result[0].duration_minutes).toBe(32);
     expect(result[1].duration_minutes).toBe(28);
   });
+
+  it('should not clone tasks that are not affected', () => {
+    const tasks: Task[] = [
+      { task_id: '1', title: 'A', duration_minutes: 30, min_duration: 10 },
+      { task_id: '2', title: 'B', duration_minutes: 30, min_duration: 10 },
+      { task_id: '3', title: 'C', duration_minutes: 30, min_duration: 10 }
+    ];
+    const result = calculateZeroSumTasks(tasks, 0, 5);
+    expect(result).not.toBe(tasks);
+    expect(result[2]).toBe(tasks[2]); // Task C should be the same object reference
+    expect(result[0]).not.toBe(tasks[0]);
+    expect(result[1]).not.toBe(tasks[1]);
+  });
 });
