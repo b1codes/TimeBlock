@@ -164,3 +164,7 @@ docker/
 
 # Isolated Workspaces
 .worktrees/
+
+# Agent
+.agent/
+agent.md
