@@ -49,3 +49,51 @@ export function calculateZeroSumTasks(tasks: Task[], topTaskIndex: number, delta
 
   return newTasks;
 }
+
+/**
+ * Toggles a 5-minute buffer after the task at the given index.
+ * @param tasks The full list of tasks.
+ * @param index The index of the task to toggle the buffer after.
+ * @returns A new array of tasks.
+ */
+export function toggleBuffer(tasks: Task[], index: number): Task[] {
+  const task = tasks[index];
+  const nextTask = tasks[index + 1];
+  if (!task || !nextTask) return tasks;
+
+  const newTasks = [...tasks];
+  const currentBuffer = task.buffer_after_minutes || 0;
+  const isAdding = currentBuffer === 0;
+
+  if (isAdding) {
+    const BUFFER_SIZE = 5;
+    // Try to take from top task first, then bottom task
+    let takenFromTop = Math.min(BUFFER_SIZE, task.duration_minutes - task.min_duration);
+    let remaining = BUFFER_SIZE - takenFromTop;
+    let takenFromBottom = Math.min(remaining, nextTask.duration_minutes - nextTask.min_duration);
+    
+    if (takenFromTop + takenFromBottom < BUFFER_SIZE) {
+      // Cannot add buffer, not enough time in adjacent tasks
+      return tasks;
+    }
+
+    newTasks[index] = {
+      ...task,
+      duration_minutes: task.duration_minutes - takenFromTop,
+      buffer_after_minutes: BUFFER_SIZE,
+    };
+    newTasks[index + 1] = {
+      ...nextTask,
+      duration_minutes: nextTask.duration_minutes - takenFromBottom,
+    };
+  } else {
+    // Removing buffer: give time back to the task that had the buffer
+    newTasks[index] = {
+      ...task,
+      duration_minutes: task.duration_minutes + currentBuffer,
+      buffer_after_minutes: 0,
+    };
+  }
+
+  return newTasks;
+}

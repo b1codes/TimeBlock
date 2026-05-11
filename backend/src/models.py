@@ -8,6 +8,7 @@ class Task(BaseModel):
     title: str
     duration_minutes: int
     min_duration: int
+    buffer_after_minutes: int = 0
 
 class TimeChunkBase(BaseModel):
     title: str

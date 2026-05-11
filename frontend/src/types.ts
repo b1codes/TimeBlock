@@ -3,6 +3,7 @@ export interface Task {
   title: string;
   duration_minutes: number;
   min_duration: number;
+  buffer_after_minutes?: number;
 }
 
 export interface TimeChunk {

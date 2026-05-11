@@ -14,7 +14,7 @@ import { TimeChunk, Task } from '../types';
 import { TaskBlock } from './TaskBlock';
 import { DraggableDivider } from './DraggableDivider';
 import { BalanceHeader } from './BalanceHeader';
-import { calculateZeroSumTasks } from '../utils/dragMath';
+import { calculateZeroSumTasks, toggleBuffer } from '../utils/dragMath';
 import { theme } from '../styles/theme';
 import { ApiClient } from '../api/client';
 
@@ -31,7 +31,7 @@ export const ChunkContainer: React.FC<Props> = ({ initialChunk, totalDurationMin
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDuration, setNewTaskDuration] = useState('15');
 
-  const currentTotal = tasks.reduce((sum, t) => sum + t.duration_minutes, 0);
+  const currentTotal = tasks.reduce((sum, t) => sum + t.duration_minutes + (t.buffer_after_minutes || 0), 0);
   const unassigned = totalDurationMinutes - currentTotal;
 
   const handleDrag = (index: number, deltaMinutes: number) => {
@@ -56,6 +56,14 @@ export const ChunkContainer: React.FC<Props> = ({ initialChunk, totalDurationMin
 
   const handleDragEnd = () => {
     setLimitedTaskIds(new Set());
+  };
+
+  const handleToggleBuffer = (index: number) => {
+    const updatedTasks = toggleBuffer(tasks, index);
+    if (updatedTasks !== tasks) {
+      setTasks(updatedTasks);
+      apiClient.debouncedUpdateChunkTasks(initialChunk.chunk_id, updatedTasks);
+    }
   };
 
   const handleTitleChange = (taskId: string, newTitle: string) => {
