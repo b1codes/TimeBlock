@@ -157,3 +157,4 @@ frontend/.jest/
 # OS
 .DS_Store
 Thumbs.db
+.superpowers/
