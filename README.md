@@ -40,11 +40,11 @@ A tactile, zero-sum time blocking application built with React Native (Expo) and
     ```
 2.  **Install dependencies:**
     ```bash
-    npm install
+    pnpm install
     ```
 3.  **Start the development server:**
     ```bash
-    npm start
+    pnpm start
     ```
 4.  **Run on device/simulator:**
     - Use the **Expo Go** app on your phone to scan the QR code.
@@ -61,5 +61,5 @@ A tactile, zero-sum time blocking application built with React Native (Expo) and
 
 ## Development
 
-- **Tests:** Run `npm test` in the `frontend` directory or `pytest` in the `backend` directory.
+- **Tests:** Run `pnpm test` in the `frontend` directory or `pytest` in the `backend` directory.
 - **Architecture:** Decoupled UI logic (Reanimated) from the logic layer (`dragMath`) and API layer (`ApiClient`).
