@@ -18,8 +18,8 @@ describe('ApiClient', () => {
   it('should debounce patch chunk requests by 750ms and send the batch payload', () => {
     const client = new ApiClient('https://api.example.com', 'user123');
     
-    const tasks1: Task[] = [{ task_id: '1', title: 'A', duration_minutes: 20, min_duration: 10 }];
-    const tasks2: Task[] = [{ task_id: '1', title: 'A', duration_minutes: 30, min_duration: 10 }];
+    const tasks1: Task[] = [{ task_id: '71061497-c5db-4507-9062-8b752cde7391', title: 'A', duration_minutes: 20, min_duration: 10 }];
+    const tasks2: Task[] = [{ task_id: '71061497-c5db-4507-9062-8b752cde7391', title: 'A', duration_minutes: 30, min_duration: 10 }];
     
     // Call multiple times in rapid succession
     client.debouncedUpdateChunkTasks('chunk1', tasks1);

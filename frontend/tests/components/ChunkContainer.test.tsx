@@ -11,8 +11,8 @@ const MOCK_CHUNK: TimeChunk = {
   end_time: '2023-10-27T09:00:00Z',
   is_template: false,
   tasks: [
-    { task_id: 't1', title: 'Task 1', duration_minutes: 30, min_duration: 10 },
-    { task_id: 't2', title: 'Task 2', duration_minutes: 30, min_duration: 10 },
+    { task_id: '71061497-c5db-4507-9062-8b752cde7391', title: 'Task 1', duration_minutes: 30, min_duration: 10 },
+    { task_id: '2205fada-bd45-4c3a-8963-ad99c5a7150a', title: 'Task 2', duration_minutes: 30, min_duration: 10 },
   ],
 };
 

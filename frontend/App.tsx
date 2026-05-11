@@ -15,9 +15,9 @@ const MOCK_CHUNK: TimeChunk = {
   end_time: '2023-10-27T09:00:00Z',
   is_template: false,
   tasks: [
-    { task_id: 't1', title: 'Wake up', duration_minutes: 15, min_duration: 5 },
-    { task_id: 't2', title: 'Exercise', duration_minutes: 45, min_duration: 10 },
-    { task_id: 't3', title: 'Breakfast', duration_minutes: 30, min_duration: 10 },
+    { task_id: '71061497-c5db-4507-9062-8b752cde7391', title: 'Wake up', duration_minutes: 15, min_duration: 5 },
+    { task_id: '2205fada-bd45-4c3a-8963-ad99c5a7150a', title: 'Exercise', duration_minutes: 45, min_duration: 10 },
+    { task_id: '102eb618-fa70-4c80-8c63-17e3a1286581', title: 'Breakfast', duration_minutes: 30, min_duration: 10 },
   ],
 };
 

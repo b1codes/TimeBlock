@@ -3,7 +3,7 @@ import { Task, TimeChunk } from '../src/types';
 describe('Types', () => {
   it('should allow constructing a valid Task object', () => {
     const task: Task = {
-      task_id: '123-uuid',
+      task_id: '71061497-c5db-4507-9062-8b752cde7391',
       title: 'Read',
       duration_minutes: 30,
       min_duration: 10
