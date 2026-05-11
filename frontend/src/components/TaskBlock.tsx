@@ -1,14 +1,31 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { theme } from '../styles/theme';
 import { Task } from '../types';
 
 interface Props extends Task {
   isLimitReached?: boolean;
+  onTitleChange?: (newTitle: string) => void;
 }
 
-export const TaskBlock: React.FC<Props> = ({ task_id, title, duration_minutes, isLimitReached }) => {
+export const TaskBlock: React.FC<Props> = ({ 
+  task_id, 
+  title, 
+  duration_minutes, 
+  isLimitReached,
+  onTitleChange 
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [localTitle, setLocalTitle] = useState(title);
+
   const height = duration_minutes * theme.layout.minutesToHeight;
+
+  const handleBlur = () => {
+    setIsEditing(false);
+    if (localTitle !== title && onTitleChange) {
+      onTitleChange(localTitle);
+    }
+  };
 
   return (
     <View 
@@ -19,7 +36,24 @@ export const TaskBlock: React.FC<Props> = ({ task_id, title, duration_minutes, i
         isLimitReached && styles.limitReached
       ]}
     >
-      <Text style={styles.title}>{title}</Text>
+      {isEditing ? (
+        <TextInput
+          style={[styles.title, styles.input]}
+          value={localTitle}
+          onChangeText={setLocalTitle}
+          onBlur={handleBlur}
+          onSubmitEditing={handleBlur}
+          autoFocus
+          selectTextOnFocus
+        />
+      ) : (
+        <Text 
+          style={styles.title}
+          onPress={() => setIsEditing(true)}
+        >
+          {title}
+        </Text>
+      )}
       <Text style={styles.duration}>{duration_minutes}m</Text>
     </View>
   );
@@ -47,6 +81,12 @@ const styles = StyleSheet.create({
   title: {
     fontWeight: '600',
     color: theme.colors.text,
+    textAlign: 'center',
+    minWidth: 100,
+  },
+  input: {
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.primary,
   },
   duration: {
     fontSize: 12,

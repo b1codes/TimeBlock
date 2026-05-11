@@ -1,39 +1,48 @@
-import React, { useMemo } from 'react';
-import { StyleSheet, View } from 'react-native';
+import React from 'react';
+import { StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { ChunkContainer } from './src/components/ChunkContainer';
-import { NoiseBackground } from './src/components/NoiseBackground';
-import { TimeChunk } from './src/types';
-import { ApiClient } from './src/api/client';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { RootStackParamList } from './src/navigation/types';
+import { ChunkListScreen } from './src/screens/ChunkListScreen';
+import { ChunkEditorScreen } from './src/screens/ChunkEditorScreen';
+import { theme } from './src/styles/theme';
 
-const MOCK_CHUNK: TimeChunk = {
-  user_id: 'user_1',
-  chunk_id: 'chunk_1',
-  title: 'Morning Routine',
-  start_time: '2023-10-27T07:00:00Z',
-  end_time: '2023-10-27T09:00:00Z',
-  is_template: false,
-  tasks: [
-    { task_id: '71061497-c5db-4507-9062-8b752cde7391', title: 'Wake up', duration_minutes: 15, min_duration: 5 },
-    { task_id: '2205fada-bd45-4c3a-8963-ad99c5a7150a', title: 'Exercise', duration_minutes: 45, min_duration: 10 },
-    { task_id: '102eb618-fa70-4c80-8c63-17e3a1286581', title: 'Breakfast', duration_minutes: 30, min_duration: 10 },
-  ],
-};
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const App = () => {
-  const apiClient = useMemo(() => new ApiClient('http://localhost:8000', 'user_1'), []);
-
   return (
     <GestureHandlerRootView style={styles.container}>
-      <View style={styles.inner}>
-        <ChunkContainer 
-          initialChunk={MOCK_CHUNK}
-          totalDurationMinutes={120} // 2 hours
-          apiClient={apiClient}
-        />
-        <NoiseBackground />
-      </View>
+      <SafeAreaProvider>
+        <NavigationContainer>
+          <Stack.Navigator
+            initialRouteName="ChunkList"
+            screenOptions={{
+              headerStyle: {
+                backgroundColor: theme.colors.background,
+              },
+              headerTintColor: theme.colors.text,
+              headerTitleStyle: {
+                fontWeight: 'bold',
+              },
+              headerShadowVisible: false,
+            }}
+          >
+            <Stack.Screen 
+              name="ChunkList" 
+              component={ChunkListScreen} 
+              options={{ title: 'Your Schedules' }}
+            />
+            <Stack.Screen 
+              name="ChunkEditor" 
+              component={ChunkEditorScreen} 
+              options={({ route }) => ({ title: route.params.chunk.title })}
+            />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </SafeAreaProvider>
       <StatusBar style="auto" />
     </GestureHandlerRootView>
   );
@@ -43,10 +52,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  inner: {
-    flex: 1,
-    paddingTop: 40, // Space for status bar on some devices
-  }
 });
 
 export default App;

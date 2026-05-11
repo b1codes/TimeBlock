@@ -42,4 +42,42 @@ describe('ApiClient', () => {
     const body = JSON.parse(callArgs[1].body);
     expect(body.tasks[0].duration_minutes).toBe(30);
   });
+
+  it('should fetch chunks', async () => {
+    const client = new ApiClient('https://api.example.com', 'user123');
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve([{ chunk_id: '1' }]),
+    });
+
+    const chunks = await client.getChunks();
+    expect(chunks).toHaveLength(1);
+    expect(global.fetch).toHaveBeenCalledWith('https://api.example.com/chunks', expect.anything());
+  });
+
+  it('should create chunk', async () => {
+    const client = new ApiClient('https://api.example.com', 'user123');
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ chunk_id: 'new' }),
+    });
+
+    const chunk = await client.createChunk({ title: 'New', start_time: '...', end_time: '...' });
+    expect(chunk.chunk_id).toBe('new');
+    expect(global.fetch).toHaveBeenCalledWith('https://api.example.com/chunks', expect.objectContaining({
+      method: 'POST',
+    }));
+  });
+
+  it('should delete chunk', async () => {
+    const client = new ApiClient('https://api.example.com', 'user123');
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+    });
+
+    await client.deleteChunk('1');
+    expect(global.fetch).toHaveBeenCalledWith('https://api.example.com/chunks/1', expect.objectContaining({
+      method: 'DELETE',
+    }));
+  });
 });
