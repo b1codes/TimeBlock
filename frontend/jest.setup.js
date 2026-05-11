@@ -32,13 +32,16 @@ jest.mock('react-native-screens', () => {
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
   const inset = { top: 0, right: 0, bottom: 0, left: 0 };
-  const SafeAreaContext = React.createContext(inset);
+  const frame = { x: 0, y: 0, width: 390, height: 844 };
   return {
-    SafeAreaProvider: ({ children }) => (
-      <SafeAreaContext.Provider value={inset}>{children}</SafeAreaContext.Provider>
-    ),
-    SafeAreaConsumer: ({ children }) => children(inset),
-    useSafeAreaInsets: () => inset,
-    SafeAreaContext,
+    __esModule: true,
+    SafeAreaProvider: jest.fn(({ children }) => children),
+    SafeAreaConsumer: jest.fn(({ children }) => children(inset)),
+    SafeAreaView: jest.fn(({ children }) => children),
+    useSafeAreaInsets: jest.fn(() => inset),
+    useSafeAreaFrame: jest.fn(() => frame),
+    SafeAreaInsetsContext: React.createContext(inset),
+    SafeAreaFrameContext: React.createContext(frame),
+    SafeAreaContext: React.createContext(inset),
   };
 });
