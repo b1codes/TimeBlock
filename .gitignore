@@ -168,3 +168,9 @@ docker/
 # Agent
 .agent/
 agent.md
+
+# b1CodingTool Generated
+CLAUDE.md
+.claude/
+GEMINI.md
+.gemini/
