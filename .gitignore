@@ -161,3 +161,6 @@ Thumbs.db
 
 # Local Docker data
 docker/
+
+# Isolated Workspaces
+.worktrees/
