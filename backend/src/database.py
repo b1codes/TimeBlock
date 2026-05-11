@@ -5,7 +5,15 @@ from uuid import uuid4
 from .models import TimeChunkResponse, TimeChunkCreate, Task
 
 def get_table():
-    dynamodb = boto3.resource('dynamodb', region_name=os.getenv('AWS_DEFAULT_REGION', 'us-east-1'))
+    endpoint_url = os.getenv('DYNAMODB_ENDPOINT_URL')
+    if endpoint_url:
+        dynamodb = boto3.resource(
+            'dynamodb',
+            region_name=os.getenv('AWS_DEFAULT_REGION', 'us-east-1'),
+            endpoint_url=endpoint_url
+        )
+    else:
+        dynamodb = boto3.resource('dynamodb', region_name=os.getenv('AWS_DEFAULT_REGION', 'us-east-1'))
     return dynamodb.Table(os.getenv('DYNAMODB_TABLE', 'TimeChunks'))
 
 def get_chunks(user_id: str) -> list[TimeChunkResponse]:

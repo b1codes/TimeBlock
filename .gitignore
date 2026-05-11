@@ -158,3 +158,6 @@ frontend/.jest/
 .DS_Store
 Thumbs.db
 .superpowers/
+
+# Local Docker data
+docker/
