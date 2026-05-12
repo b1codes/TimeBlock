@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 from datetime import datetime
 
 class Task(BaseModel):
-    task_id: UUID = Field(default_factory=uuid4)
+    task_id: str
     title: str
     duration_minutes: int
     min_duration: int
@@ -14,7 +14,7 @@ class TimeChunkBase(BaseModel):
     title: str
     start_time: datetime
     end_time: datetime
-    is_template: bool
+    is_template: bool = False
     tasks: List[Task] = Field(default_factory=list)
 
 class TimeChunkCreate(TimeChunkBase):
