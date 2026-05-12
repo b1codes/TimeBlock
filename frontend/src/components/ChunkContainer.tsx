@@ -26,14 +26,14 @@ interface Props {
 }
 
 export const ChunkContainer: React.FC<Props> = ({ initialChunk, totalDurationMinutes, apiClient }) => {
-  const [tasks, setTasks] = useState<Task[]>(initialChunk.tasks);
+  const [tasks, setTasks] = useState<Task[]>(initialChunk.tasks || []);
   const [limitedTaskIds, setLimitedTaskIds] = useState<Set<string>>(new Set());
   const [modalVisible, setModalVisible] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDuration, setNewTaskDuration] = useState('15');
 
-  const currentTotal = tasks.reduce((sum, t) => sum + t.duration_minutes + (t.buffer_after_minutes || 0), 0);
-  const unassigned = totalDurationMinutes - currentTotal;
+  const currentTotal = (tasks || []).reduce((sum, t) => sum + (t.duration_minutes || 0) + (t.buffer_after_minutes || 0), 0);
+  const unassigned = Math.max(0, totalDurationMinutes - currentTotal) || 0;
 
   const handleDrag = (index: number, deltaMinutes: number) => {
     const updatedTasks = calculateZeroSumTasks(tasks, index, deltaMinutes);
@@ -169,7 +169,6 @@ export const ChunkContainer: React.FC<Props> = ({ initialChunk, totalDurationMin
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   scrollContent: {
     paddingVertical: theme.spacing.m,
