@@ -14,7 +14,7 @@ export class ApiClient {
   }
 
   public async getChunks(): Promise<TimeChunk[]> {
-    const response = await fetch(`${this.baseUrl}/chunks`, {
+    const response = await fetch(`${this.baseUrl}/chunks/`, {
       headers: { 'x-user-id': this.userId }
     });
     if (!response.ok) throw new Error('Failed to fetch chunks');
@@ -22,7 +22,7 @@ export class ApiClient {
   }
 
   public async getTemplates(): Promise<TimeChunk[]> {
-    const response = await fetch(`${this.baseUrl}/templates`, {
+    const response = await fetch(`${this.baseUrl}/templates/`, {
       headers: { 'x-user-id': this.userId }
     });
     if (!response.ok) throw new Error('Failed to fetch templates');
@@ -35,7 +35,7 @@ export class ApiClient {
     end_time: string; 
     template_id?: string 
   }): Promise<TimeChunk> {
-    const response = await fetch(`${this.baseUrl}/chunks`, {
+    const response = await fetch(`${this.baseUrl}/chunks/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -48,7 +48,7 @@ export class ApiClient {
   }
 
   public async deleteChunk(chunkId: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/chunks/${chunkId}`, {
+    const response = await fetch(`${this.baseUrl}/chunks/${chunkId}/`, {
       method: 'DELETE',
       headers: { 'x-user-id': this.userId }
     });
@@ -57,7 +57,7 @@ export class ApiClient {
 
   private async executePatch(chunkId: string, tasks: Task[]): Promise<void> {
     try {
-      await fetch(`${this.baseUrl}/chunks/${chunkId}`, {
+      await fetch(`${this.baseUrl}/chunks/${chunkId}/`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
