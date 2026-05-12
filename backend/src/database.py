@@ -1,4 +1,5 @@
 import boto3
+import botocore.exceptions
 import os
 from boto3.dynamodb.conditions import Key
 from uuid import uuid4
@@ -63,10 +64,11 @@ def update_chunk(user_id: str, chunk_id: str, update: TimeChunkUpdate) -> TimeCh
 
     if not set_clauses:
         # No-op partial update: verify the chunk exists, return current state.
+        # We surface chunk-not-found by raising the same ClientError shape that
+        # update_item produces, so routes.py can keep a single 404 handler.
         response = table.get_item(Key={'user_id': user_id, 'chunk_id': chunk_id})
         item = response.get('Item')
         if item is None:
-            import botocore.exceptions
             raise botocore.exceptions.ClientError(
                 {'Error': {'Code': 'ConditionalCheckFailedException', 'Message': 'Chunk not found'}},
                 'GetItem'

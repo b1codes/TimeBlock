@@ -146,3 +146,9 @@ def test_update_chunk_empty_payload_is_noop(client, timechunk_table):
     assert data['start_time'].startswith('2023-01-01T06:00:00')
     assert data['end_time'].startswith('2023-01-01T08:00:00')
     assert data['tasks'] == []
+
+
+def test_update_chunk_empty_payload_missing(client, timechunk_table):
+    response = client.patch("/chunks/missing_chunk/", json={}, headers={"x-user-id": "user123"})
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Chunk not found"
