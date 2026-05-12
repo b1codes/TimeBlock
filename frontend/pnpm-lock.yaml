@@ -11,6 +11,12 @@ importers:
       '@babel/runtime':
         specifier: ^7.29.2
         version: 7.29.2
+      '@expo-google-fonts/montserrat':
+        specifier: ^0.4.2
+        version: 0.4.2
+      '@expo-google-fonts/open-sans':
+        specifier: ^0.4.2
+        version: 0.4.2
       '@react-navigation/native':
         specifier: ^6.1.18
         version: 6.1.18(react-native@0.73.6(@babel/core@7.29.0)(@babel/preset-env@7.29.5(@babel/core@7.29.0))(react@18.2.0))(react@18.2.0)
@@ -23,6 +29,15 @@ importers:
       expo:
         specifier: ~50.0.0
         version: 50.0.21(@babel/core@7.29.0)(@react-native/babel-preset@0.83.6(@babel/core@7.29.0))(react-native@0.73.6(@babel/core@7.29.0)(@babel/preset-env@7.29.5(@babel/core@7.29.0))(react@18.2.0))(react@18.2.0)
+      expo-blur:
+        specifier: ~12.9.2
+        version: 12.9.2(expo@50.0.21(@babel/core@7.29.0)(@react-native/babel-preset@0.83.6(@babel/core@7.29.0))(react-native@0.73.6(@babel/core@7.29.0)(@babel/preset-env@7.29.5(@babel/core@7.29.0))(react@18.2.0))(react@18.2.0))
+      expo-font:
+        specifier: ~11.10.3
+        version: 11.10.3(expo@50.0.21(@babel/core@7.29.0)(@react-native/babel-preset@0.83.6(@babel/core@7.29.0))(react-native@0.73.6(@babel/core@7.29.0)(@babel/preset-env@7.29.5(@babel/core@7.29.0))(react@18.2.0))(react@18.2.0))
+      expo-linear-gradient:
+        specifier: ~12.7.2
+        version: 12.7.2(expo@50.0.21(@babel/core@7.29.0)(@react-native/babel-preset@0.83.6(@babel/core@7.29.0))(react-native@0.73.6(@babel/core@7.29.0)(@babel/preset-env@7.29.5(@babel/core@7.29.0))(react@18.2.0))(react@18.2.0))
       expo-status-bar:
         specifier: ~1.11.1
         version: 1.11.1
@@ -861,6 +876,12 @@ packages:
   '@egjs/hammerjs@2.0.17':
     resolution: {integrity: sha512-XQsZgjm2EcVUiZQf11UBJQfmZeEmOW8DpI1gsFeln6w0ae0ii4dMQEQ0kjl6DspdWX1aGY1/loyXnP0JS06e/A==}
     engines: {node: '>=0.8.0'}
+
+  '@expo-google-fonts/montserrat@0.4.2':
+    resolution: {integrity: sha512-Xyq7rKJhhZOE1Xk4wKSSVoUeOkFmQEMhtZ3pdFrgYckGZMs115Apmld1AI8Ju+yrl5GzDdfRCCqRr33dvEDYUA==}
+
+  '@expo-google-fonts/open-sans@0.4.2':
+    resolution: {integrity: sha512-gvhPqLXYnltWgll3iBwRGUwf5yN2HCh4mgQmFoQ8oU66LTs23oX4N7T3t0BDsKfP/1Z8F8+4c7wSkA11Nnk4kA==}
 
   '@expo/bunyan@4.0.1':
     resolution: {integrity: sha512-+Lla7nYSiHZirgK+U/uYzsLv/X+HaJienbD5AKX1UQZHYfWaP+9uuQluRB4GrEVWF0GZ7vEVp/jzaOT9k/SQlg==}
@@ -2241,6 +2262,11 @@ packages:
   expo-asset@9.0.2:
     resolution: {integrity: sha512-PzYKME1MgUOoUvwtdzhAyXkjXOXGiSYqGKG/MsXwWr0Ef5wlBaBm2DCO9V6KYbng5tBPFu6hTjoRNil1tBOSow==}
 
+  expo-blur@12.9.2:
+    resolution: {integrity: sha512-q+EIOkXw7OCE3VBTLRANsUIdMxtFWDTFpaMulJEXMwtxNQaCcAvzHZvwWP9dlI96FM4A6UdX2/slBNfNJzJcCQ==}
+    peerDependencies:
+      expo: '*'
+
   expo-constants@15.4.6:
     resolution: {integrity: sha512-vizE69dww2Vl0PTWWvDmK0Jo2/J+WzdcMZlA05YEnEYofQuhKxTVsiuipf79mSOmFavt4UQYC1UnzptzKyfmiQ==}
     peerDependencies:
@@ -2258,6 +2284,11 @@ packages:
 
   expo-keep-awake@12.8.2:
     resolution: {integrity: sha512-uiQdGbSX24Pt8nGbnmBtrKq6xL/Tm3+DuDRGBk/3ZE/HlizzNosGRIufIMJ/4B4FRw4dw8KU81h2RLuTjbay6g==}
+    peerDependencies:
+      expo: '*'
+
+  expo-linear-gradient@12.7.2:
+    resolution: {integrity: sha512-Wwb2EF18ywgrlTodcXJ6Yt/UEcKitRMdXPNyP/IokmeKh4emoq9DxZJpZdkXm3HUTLlbRpi6/t32jrFVqXB9AQ==}
     peerDependencies:
       expo: '*'
 
@@ -5805,6 +5836,10 @@ snapshots:
     dependencies:
       '@types/hammerjs': 2.0.46
 
+  '@expo-google-fonts/montserrat@0.4.2': {}
+
+  '@expo-google-fonts/open-sans@0.4.2': {}
+
   '@expo/bunyan@4.0.1':
     dependencies:
       uuid: 8.3.2
@@ -7919,6 +7954,10 @@ snapshots:
       - expo
       - supports-color
 
+  expo-blur@12.9.2(expo@50.0.21(@babel/core@7.29.0)(@react-native/babel-preset@0.83.6(@babel/core@7.29.0))(react-native@0.73.6(@babel/core@7.29.0)(@babel/preset-env@7.29.5(@babel/core@7.29.0))(react@18.2.0))(react@18.2.0)):
+    dependencies:
+      expo: 50.0.21(@babel/core@7.29.0)(@react-native/babel-preset@0.83.6(@babel/core@7.29.0))(react-native@0.73.6(@babel/core@7.29.0)(@babel/preset-env@7.29.5(@babel/core@7.29.0))(react@18.2.0))(react@18.2.0)
+
   expo-constants@15.4.6(expo@50.0.21(@babel/core@7.29.0)(@react-native/babel-preset@0.83.6(@babel/core@7.29.0))(react-native@0.73.6(@babel/core@7.29.0)(@babel/preset-env@7.29.5(@babel/core@7.29.0))(react@18.2.0))(react@18.2.0)):
     dependencies:
       '@expo/config': 8.5.6
@@ -7936,6 +7975,10 @@ snapshots:
       fontfaceobserver: 2.3.0
 
   expo-keep-awake@12.8.2(expo@50.0.21(@babel/core@7.29.0)(@react-native/babel-preset@0.83.6(@babel/core@7.29.0))(react-native@0.73.6(@babel/core@7.29.0)(@babel/preset-env@7.29.5(@babel/core@7.29.0))(react@18.2.0))(react@18.2.0)):
+    dependencies:
+      expo: 50.0.21(@babel/core@7.29.0)(@react-native/babel-preset@0.83.6(@babel/core@7.29.0))(react-native@0.73.6(@babel/core@7.29.0)(@babel/preset-env@7.29.5(@babel/core@7.29.0))(react@18.2.0))(react@18.2.0)
+
+  expo-linear-gradient@12.7.2(expo@50.0.21(@babel/core@7.29.0)(@react-native/babel-preset@0.83.6(@babel/core@7.29.0))(react-native@0.73.6(@babel/core@7.29.0)(@babel/preset-env@7.29.5(@babel/core@7.29.0))(react@18.2.0))(react@18.2.0)):
     dependencies:
       expo: 50.0.21(@babel/core@7.29.0)(@react-native/babel-preset@0.83.6(@babel/core@7.29.0))(react-native@0.73.6(@babel/core@7.29.0)(@babel/preset-env@7.29.5(@babel/core@7.29.0))(react@18.2.0))(react@18.2.0)
 

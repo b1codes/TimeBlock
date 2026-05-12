@@ -1,7 +1,14 @@
 import React from 'react';
-import { StyleSheet, View, Text } from 'react-native';
-import { PanGestureHandler, PanGestureHandlerGestureEvent, TapGestureHandler, TapGestureHandlerGestureEvent, State } from 'react-native-gesture-handler';
-import Animated, { useAnimatedGestureHandler, runOnJS } from 'react-native-reanimated';
+import { StyleSheet, View, Text, Pressable } from 'react-native';
+import { PanGestureHandler, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler';
+import Animated, { 
+  useAnimatedGestureHandler, 
+  runOnJS,
+  useAnimatedStyle,
+  withSpring,
+  useSharedValue,
+  withTiming
+} from 'react-native-reanimated';
 import { theme } from '../styles/theme';
 
 interface Props {
@@ -12,13 +19,15 @@ interface Props {
 }
 
 export const DraggableDivider: React.FC<Props> = ({ onDrag, onDragEnd, bufferDuration = 0, onPress }) => {
+  const isDragging = useSharedValue(0);
+  
   const gestureHandler = useAnimatedGestureHandler<PanGestureHandlerGestureEvent, { startY: number }>({
     onStart: (_, ctx) => {
       ctx.startY = 0;
+      isDragging.value = withTiming(1, { duration: 100 });
     },
     onActive: (event, ctx) => {
       const deltaY = event.translationY - ctx.startY;
-      // We only want to signal changes that cross a 5-minute snap boundary
       const snapPx = theme.layout.snapIncrement * theme.layout.minutesToHeight;
       if (Math.abs(deltaY) >= snapPx) {
         const snapDelta = Math.round(deltaY / snapPx) * theme.layout.snapIncrement;
@@ -27,36 +36,44 @@ export const DraggableDivider: React.FC<Props> = ({ onDrag, onDragEnd, bufferDur
       }
     },
     onEnd: () => {
+      isDragging.value = withTiming(0, { duration: 200 });
       runOnJS(onDragEnd)();
     },
   });
 
-  const handleTap = ({ nativeEvent }: TapGestureHandlerGestureEvent) => {
-    if (nativeEvent.state === State.ACTIVE && onPress) {
-      runOnJS(onPress)();
-    }
-  };
+  const animatedHandleStyle = useAnimatedStyle(() => ({
+    backgroundColor: isDragging.value 
+      ? theme.colors.thermal.core 
+      : theme.colors.glass.highlight,
+    transform: [
+      { scaleX: withSpring(isDragging.value ? 1.5 : 1, theme.physics.spring) },
+      { scaleY: withSpring(isDragging.value ? 1.2 : 1, theme.physics.spring) }
+    ],
+    opacity: isDragging.value ? 1 : 0.6,
+  }));
 
   const isBuffer = bufferDuration > 0;
-  const height = isBuffer ? (bufferDuration * theme.layout.minutesToHeight) : 24;
+  const height = isBuffer ? (bufferDuration * theme.layout.minutesToHeight) : 32;
 
   return (
-    <TapGestureHandler onHandlerStateChange={handleTap}>
-      <Animated.View>
-        <PanGestureHandler onGestureEvent={gestureHandler}>
-          <Animated.View style={[
-            styles.wrapper, 
-            { height },
-            isBuffer && styles.bufferWrapper
-          ]}>
-            <View style={[styles.handle, isBuffer && styles.bufferHandle]} />
-            {isBuffer && (
-              <Text style={styles.bufferText}>Buffer ({bufferDuration}m)</Text>
-            )}
-          </Animated.View>
-        </PanGestureHandler>
-      </Animated.View>
-    </TapGestureHandler>
+    <Animated.View>
+      <PanGestureHandler onGestureEvent={gestureHandler}>
+        <Animated.View style={[
+          styles.wrapper, 
+          { height },
+          isBuffer && styles.bufferWrapper
+        ]}>
+          <Pressable onPress={onPress} style={StyleSheet.absoluteFill}>
+            <View style={styles.hitTarget}>
+              <Animated.View style={[styles.handle, animatedHandleStyle]} />
+              {isBuffer && (
+                <Text style={styles.bufferText}>BUFFER {bufferDuration}M</Text>
+              )}
+            </View>
+          </Pressable>
+        </Animated.View>
+      </PanGestureHandler>
+    </Animated.View>
   );
 };
 
@@ -65,35 +82,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 100,
-    marginVertical: 4,
+  },
+  hitTarget: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   bufferWrapper: {
-    backgroundColor: theme.colors.unallocated,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: theme.colors.border,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
     marginHorizontal: theme.spacing.m,
   },
   handle: {
-    width: 40,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: theme.colors.border,
-    borderWidth: 1,
-    borderColor: '#CCC',
-  },
-  bufferHandle: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-    opacity: 0.5,
-    position: 'absolute',
-    top: -3, // Offset slightly to sit on the edge
+    width: 60,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: theme.colors.glass.highlight,
   },
   bufferText: {
-    ...theme.typography.caption,
+    fontFamily: theme.typography.caption.fontFamily,
+    fontSize: 10,
+    letterSpacing: 1.5,
     color: theme.colors.text,
-    opacity: 0.6,
-    fontWeight: '600',
+    opacity: 0.4,
+    marginTop: 8,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -19,18 +19,20 @@ import { theme } from '../styles/theme';
 import { NoiseBackground } from '../components/NoiseBackground';
 import { format, parseISO, addHours, startOfHour } from 'date-fns';
 import { Swipeable } from 'react-native-gesture-handler';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChunkList'>;
 
 export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
-  const [chunks, setChunks] = useState<TimeChunk[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [startTime, setStartTime] = useState(format(startOfHour(new Date()), "yyyy-MM-dd'T'HH:mm:ss'Z'"));
-  const [endTime, setEndTime] = useState(format(addHours(startOfHour(new Date()), 2), "yyyy-MM-dd'T'HH:mm:ss'Z'"));
+  const [chunks, setChunks] = React.useState<TimeChunk[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [modalVisible, setModalVisible] = React.useState(false);
+  const [newTitle, setNewTitle] = React.useState('');
+  const [startTime, setStartTime] = React.useState(format(startOfHour(new Date()), "yyyy-MM-dd'T'HH:mm:ss'Z'"));
+  const [endTime, setEndTime] = React.useState(format(addHours(startOfHour(new Date()), 2), "yyyy-MM-dd'T'HH:mm:ss'Z'"));
 
-  const apiClient = useMemo(() => new ApiClient('http://localhost:8000', 'user_1'), []);
+  const apiClient = React.useMemo(() => new ApiClient('http://localhost:8000', 'user_1'), []);
 
   useEffect(() => {
     loadChunks();
@@ -83,7 +85,7 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
       style={styles.deleteAction}
       onPress={() => handleDelete(chunkId)}
     >
-      <Text style={styles.deleteActionText}>Delete</Text>
+      <Text style={styles.deleteActionText}>DELETE</Text>
     </TouchableOpacity>
   );
 
@@ -97,13 +99,16 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
           style={styles.chunkCard}
           onPress={() => navigation.navigate('ChunkEditor', { chunk: item })}
         >
-          <View>
-            <Text style={styles.chunkTitle}>{item.title}</Text>
-            <Text style={styles.chunkTime}>
-              {format(start, 'HH:mm')} - {format(end, 'HH:mm')}
-            </Text>
+          <BlurView intensity={15} tint="dark" style={StyleSheet.absoluteFill} />
+          <View style={styles.cardContent}>
+            <View>
+              <Text style={styles.chunkTitle}>{item.title.toUpperCase()}</Text>
+              <Text style={styles.chunkTime}>
+                {format(start, 'HH:mm')} — {format(end, 'HH:mm')}
+              </Text>
+            </View>
+            <Text style={styles.taskCount}>{item.tasks.length} INSTRUMENTS</Text>
           </View>
-          <Text style={styles.taskCount}>{item.tasks.length} tasks</Text>
         </TouchableOpacity>
       </Swipeable>
     );
@@ -111,6 +116,11 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <NoiseBackground />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>CHRONOS</Text>
+        <Text style={styles.headerSubtitle}>TIMEBLOCK INSTRUMENTATION</Text>
+      </View>
       <FlatList
         data={chunks}
         renderItem={renderItem}
@@ -121,7 +131,7 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
         ListEmptyComponent={
           !loading ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No schedules yet. Create one!</Text>
+              <Text style={styles.emptyText}>No active schedules.</Text>
             </View>
           ) : null
         }
@@ -131,46 +141,42 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
         style={styles.fab}
         onPress={() => setModalVisible(true)}
       >
-        <Text style={styles.fabText}>+</Text>
+        <LinearGradient
+          colors={theme.colors.thermal.glow}
+          style={styles.fabGradient}
+        >
+          <Text style={styles.fabText}>+</Text>
+        </LinearGradient>
       </TouchableOpacity>
 
       <Modal
         visible={modalVisible}
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create Schedule</Text>
+          <BlurView intensity={40} tint="dark" style={styles.modalContent}>
+            <Text style={styles.modalTitle}>INITIALIZE SCHEDULE</Text>
             <TextInput
               style={styles.input}
-              placeholder="Title (e.g., Morning Routine)"
+              placeholder="System Designation"
+              placeholderTextColor="rgba(255,255,255,0.3)"
               value={newTitle}
               onChangeText={setNewTitle}
               autoFocus
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Start Time (ISO)"
-              value={startTime}
-              onChangeText={setStartTime}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="End Time (ISO)"
-              value={endTime}
-              onChangeText={setEndTime}
-            />
             <View style={styles.modalButtons}>
-              <Button title="Cancel" color={theme.colors.error} onPress={() => setModalVisible(false)} />
-              <Button title="Create" onPress={handleCreate} />
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
+                <Text style={styles.cancelBtnText}>ABORT</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.createBtn} onPress={handleCreate}>
+                <Text style={styles.createBtnText}>INITIALIZE</Text>
+              </TouchableOpacity>
             </View>
-          </View>
+          </BlurView>
         </View>
       </Modal>
-
-      <NoiseBackground />
     </View>
   );
 };
@@ -180,51 +186,79 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+  header: {
+    paddingTop: 60,
+    paddingHorizontal: theme.spacing.m,
+    paddingBottom: theme.spacing.l,
+    borderBottomWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  headerTitle: {
+    fontFamily: theme.typography.h1.fontFamily,
+    fontSize: 32,
+    color: theme.colors.text,
+    letterSpacing: 4,
+  },
+  headerSubtitle: {
+    fontFamily: theme.typography.caption.fontFamily,
+    fontSize: 10,
+    color: theme.colors.thermal.core,
+    letterSpacing: 2,
+    marginTop: 4,
+  },
   listContent: {
     padding: theme.spacing.m,
   },
   chunkCard: {
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.m,
+    height: 100,
+    backgroundColor: theme.colors.glass.base,
     borderRadius: 12,
     marginBottom: theme.spacing.m,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: theme.colors.glass.border,
+  },
+  cardContent: {
+    flex: 1,
+    padding: theme.spacing.m,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+    zIndex: 10,
   },
   chunkTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: theme.typography.h2.fontFamily,
+    fontSize: 16,
     color: theme.colors.text,
+    letterSpacing: 1,
   },
   chunkTime: {
+    fontFamily: theme.typography.body.fontFamily,
     fontSize: 14,
     color: theme.colors.textSecondary,
     marginTop: 4,
   },
   taskCount: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.colors.primary,
+    fontFamily: theme.typography.caption.fontFamily,
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: theme.colors.thermal.core,
+    letterSpacing: 1,
   },
   deleteAction: {
     backgroundColor: theme.colors.error,
     justifyContent: 'center',
     alignItems: 'flex-end',
-    paddingHorizontal: 20,
-    height: 70, // Matches card height approx
+    paddingHorizontal: 30,
+    height: 100,
     borderRadius: 12,
     marginBottom: theme.spacing.m,
-    marginLeft: -10,
   },
   deleteActionText: {
     color: '#fff',
-    fontWeight: '600',
+    fontFamily: theme.typography.h2.fontFamily,
+    fontSize: 12,
+    letterSpacing: 1,
   },
   emptyState: {
     marginTop: 100,
@@ -232,56 +266,84 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: theme.colors.textSecondary,
-    fontSize: 16,
+    fontFamily: theme.typography.body.fontFamily,
   },
   fab: {
     position: 'absolute',
     right: 24,
     bottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: theme.colors.primary,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowColor: theme.colors.thermal.core,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+  },
+  fabGradient: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 8,
-    shadowColor: theme.colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
   },
   fabText: {
     color: '#fff',
     fontSize: 32,
-    lineHeight: 32,
-    textAlign: 'center',
+    fontFamily: theme.typography.h1.fontFamily,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
     justifyContent: 'center',
-    padding: 20,
+    padding: 24,
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 24,
+    padding: 32,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.border,
+    overflow: 'hidden',
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontFamily: theme.typography.h2.fontFamily,
+    fontSize: 18,
+    color: theme.colors.text,
+    marginBottom: 24,
     textAlign: 'center',
+    letterSpacing: 2,
   },
   input: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    padding: 16,
+    color: '#FFF',
+    fontFamily: theme.typography.body.fontFamily,
+    marginBottom: 24,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
+    borderColor: theme.colors.glass.border,
   },
   modalButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
+  },
+  cancelBtn: {
+    padding: 16,
+  },
+  cancelBtnText: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.typography.h2.fontFamily,
+    letterSpacing: 1,
+  },
+  createBtn: {
+    backgroundColor: theme.colors.thermal.core,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 12,
+  },
+  createBtnText: {
+    color: '#FFF',
+    fontFamily: theme.typography.h2.fontFamily,
+    letterSpacing: 1,
   }
 });

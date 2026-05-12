@@ -7,9 +7,10 @@ import {
   Text, 
   Modal, 
   TextInput,
-  Button,
   Alert
 } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { TimeChunk, Task } from '../types';
 import { TaskBlock } from './TaskBlock';
 import { DraggableDivider } from './DraggableDivider';
@@ -58,14 +59,6 @@ export const ChunkContainer: React.FC<Props> = ({ initialChunk, totalDurationMin
     setLimitedTaskIds(new Set());
   };
 
-  const handleToggleBuffer = (index: number) => {
-    const updatedTasks = toggleBuffer(tasks, index);
-    if (updatedTasks !== tasks) {
-      setTasks(updatedTasks);
-      apiClient.debouncedUpdateChunkTasks(initialChunk.chunk_id, updatedTasks);
-    }
-  };
-
   const handleTitleChange = (taskId: string, newTitle: string) => {
     const updatedTasks = tasks.map(t => t.task_id === taskId ? { ...t, title: newTitle } : t);
     setTasks(updatedTasks);
@@ -75,12 +68,12 @@ export const ChunkContainer: React.FC<Props> = ({ initialChunk, totalDurationMin
   const handleAddTask = () => {
     const duration = parseInt(newTaskDuration);
     if (!newTaskTitle.trim() || isNaN(duration)) {
-      Alert.alert('Error', 'Please enter a valid title and duration');
+      Alert.alert('ERROR', 'INVALID SYSTEM DESIGNATION OR PARAMETERS');
       return;
     }
 
     if (duration > unassigned) {
-      Alert.alert('Error', `Not enough time left (${unassigned}m available)`);
+      Alert.alert('ERROR', `INSUFFICIENT ATMOSPHERE: ${unassigned}M AVAILABLE`);
       return;
     }
 
@@ -114,6 +107,7 @@ export const ChunkContainer: React.FC<Props> = ({ initialChunk, totalDurationMin
               <DraggableDivider 
                 onDrag={(delta) => handleDrag(index, delta)}
                 onDragEnd={handleDragEnd}
+                bufferDuration={task.buffer_after_minutes}
               />
             )}
           </React.Fragment>
@@ -126,45 +120,46 @@ export const ChunkContainer: React.FC<Props> = ({ initialChunk, totalDurationMin
             ]} 
             onPress={() => setModalVisible(true)}
           >
-            <Text style={styles.gapText}>+ Add Task ({unassigned}m left)</Text>
+            <BlurView intensity={5} tint="dark" style={StyleSheet.absoluteFill} />
+            <Text style={styles.gapText}>+ INITIALIZE INSTRUMENT ({unassigned}M)</Text>
           </TouchableOpacity>
         )}
       </ScrollView>
 
-      {unassigned === 0 && (
-        <TouchableOpacity style={styles.fab} onPress={() => Alert.alert('Full', 'No more unassigned time!')}>
-          <Text style={styles.fabText}>+</Text>
-        </TouchableOpacity>
-      )}
-
       <Modal
         visible={modalVisible}
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Task</Text>
+          <BlurView intensity={40} tint="dark" style={styles.modalContent}>
+            <Text style={styles.modalTitle}>ADD INSTRUMENT</Text>
             <TextInput
               style={styles.input}
-              placeholder="Task Name"
+              placeholder="Designation"
+              placeholderTextColor="rgba(255,255,255,0.3)"
               value={newTaskTitle}
               onChangeText={setNewTaskTitle}
               autoFocus
             />
             <TextInput
               style={styles.input}
-              placeholder="Duration (minutes)"
+              placeholder="Duration (M)"
+              placeholderTextColor="rgba(255,255,255,0.3)"
               value={newTaskDuration}
               onChangeText={setNewTaskDuration}
               keyboardType="numeric"
             />
             <View style={styles.modalButtons}>
-              <Button title="Cancel" color={theme.colors.error} onPress={() => setModalVisible(false)} />
-              <Button title="Add" onPress={handleAddTask} />
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
+                <Text style={styles.cancelBtnText}>ABORT</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.createBtn} onPress={handleAddTask}>
+                <Text style={styles.createBtnText}>INITIALIZE</Text>
+              </TouchableOpacity>
             </View>
-          </View>
+          </BlurView>
         </View>
       </Modal>
     </View>
@@ -181,60 +176,74 @@ const styles = StyleSheet.create({
   },
   gap: {
     marginHorizontal: theme.spacing.m,
-    backgroundColor: theme.colors.unallocated,
-    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.01)',
+    borderRadius: 12,
     borderStyle: 'dashed',
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   gapText: {
     color: theme.colors.textSecondary,
-    fontWeight: '600',
-  },
-  fab: {
-    position: 'absolute',
-    right: 24,
-    bottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: theme.colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-    opacity: 0.5,
-  },
-  fabText: {
-    color: theme.colors.text,
-    fontSize: 24,
+    fontFamily: theme.typography.caption.fontFamily,
+    fontSize: 10,
+    letterSpacing: 1,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
     justifyContent: 'center',
-    padding: 20,
+    padding: 24,
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 24,
+    padding: 32,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.border,
+    overflow: 'hidden',
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontFamily: theme.typography.h2.fontFamily,
+    fontSize: 18,
+    color: theme.colors.text,
+    marginBottom: 24,
     textAlign: 'center',
+    letterSpacing: 2,
   },
   input: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    padding: 16,
+    color: '#FFF',
+    fontFamily: theme.typography.body.fontFamily,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.glass.border,
   },
   modalButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  cancelBtn: {
+    padding: 16,
+  },
+  cancelBtnText: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.typography.h2.fontFamily,
+    letterSpacing: 1,
+  },
+  createBtn: {
+    backgroundColor: theme.colors.thermal.core,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 12,
+  },
+  createBtnText: {
+    color: '#FFF',
+    fontFamily: theme.typography.h2.fontFamily,
+    letterSpacing: 1,
   }
 });

@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { 
+  useAnimatedStyle, 
+  withTiming, 
+  useSharedValue,
+  withSequence,
+  interpolateColor
+} from 'react-native-reanimated';
 import { theme } from '../styles/theme';
 import { Task } from '../types';
 
@@ -7,6 +16,8 @@ interface Props extends Task {
   isLimitReached?: boolean;
   onTitleChange?: (newTitle: string) => void;
 }
+
+const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 export const TaskBlock: React.FC<Props> = ({ 
   task_id, 
@@ -17,6 +28,8 @@ export const TaskBlock: React.FC<Props> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localTitle, setLocalTitle] = useState(title);
+  
+  const excitement = useSharedValue(0);
 
   const height = duration_minutes * theme.layout.minutesToHeight;
 
@@ -27,69 +40,114 @@ export const TaskBlock: React.FC<Props> = ({
     }
   };
 
+  const handlePressIn = () => {
+    excitement.value = withTiming(1, { duration: 50 });
+  };
+
+  const handlePressOut = () => {
+    excitement.value = withTiming(0, { duration: 300 });
+  };
+
+  const animatedGlowStyle = useAnimatedStyle(() => ({
+    opacity: excitement.value,
+    transform: [{ scale: 1 + excitement.value * 0.05 }],
+  }));
+
+  const animatedContainerStyle = useAnimatedStyle(() => ({
+    borderColor: isLimitReached 
+      ? theme.colors.error 
+      : interpolateColor(
+          excitement.value,
+          [0, 1],
+          [theme.colors.glass.border, theme.colors.thermal.core]
+        ),
+    borderWidth: isLimitReached ? 2 : 1,
+  }));
+
   return (
-    <View 
-      testID={`task-block-${task_id}`}
-      style={[
-        styles.container, 
-        { height },
-        isLimitReached && styles.limitReached
-      ]}
-    >
-      {isEditing ? (
-        <TextInput
-          style={[styles.title, styles.input]}
-          value={localTitle}
-          onChangeText={setLocalTitle}
-          onBlur={handleBlur}
-          onSubmitEditing={handleBlur}
-          autoFocus
-          selectTextOnFocus
-        />
-      ) : (
-        <Text 
-          style={styles.title}
-          onPress={() => setIsEditing(true)}
-        >
-          {title}
-        </Text>
-      )}
-      <Text style={styles.duration}>{duration_minutes}m</Text>
+    <View style={[styles.outer, { height }]}>
+      <Pressable 
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onLongPress={() => setIsEditing(true)}
+        style={styles.pressable}
+      >
+        <Animated.View style={[styles.container, animatedContainerStyle, { height }]}>
+          <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill}>
+            <LinearGradient
+              colors={['rgba(255,255,255,0.05)', 'transparent']}
+              style={StyleSheet.absoluteFill}
+            />
+          </BlurView>
+
+          {/* Thermal Glow Layer */}
+          <Animated.View style={[StyleSheet.absoluteFill, animatedGlowStyle]}>
+             <LinearGradient
+              colors={['rgba(255, 59, 48, 0.2)', 'transparent']}
+              style={StyleSheet.absoluteFill}
+            />
+          </Animated.View>
+
+          <View style={styles.content}>
+            {isEditing ? (
+              <TextInput
+                style={[styles.title, styles.input]}
+                value={localTitle}
+                onChangeText={setLocalTitle}
+                onBlur={handleBlur}
+                onSubmitEditing={handleBlur}
+                autoFocus
+                selectTextOnFocus
+                placeholderTextColor="rgba(255,255,255,0.3)"
+              />
+            ) : (
+              <Text style={styles.title}>{title}</Text>
+            )}
+            <Text style={styles.duration}>{duration_minutes}m</Text>
+          </View>
+        </Animated.View>
+      </Pressable>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#FFF',
+  outer: {
     marginHorizontal: theme.spacing.m,
-    marginVertical: 2,
-    padding: theme.spacing.s,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginVertical: 4,
+    borderRadius: 12,
+    overflow: 'hidden',
     ...theme.shadows.lifted,
   },
-  limitReached: {
-    borderColor: theme.colors.error,
-    borderWidth: 2,
-    shadowColor: theme.colors.error,
-    shadowOpacity: 0.3,
+  pressable: {
+    flex: 1,
+  },
+  container: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: theme.colors.glass.base,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  content: {
+    zIndex: 10,
+    alignItems: 'center',
   },
   title: {
-    fontWeight: '600',
+    fontFamily: theme.typography.h2.fontFamily,
+    fontSize: theme.typography.h2.fontSize,
     color: theme.colors.text,
     textAlign: 'center',
     minWidth: 100,
   },
   input: {
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.primary,
+    borderBottomColor: theme.colors.thermal.core,
   },
   duration: {
-    fontSize: 12,
-    color: theme.colors.secondary,
+    fontFamily: theme.typography.caption.fontFamily,
+    fontSize: theme.typography.caption.fontSize,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
   }
 });
