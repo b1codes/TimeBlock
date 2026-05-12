@@ -12,7 +12,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ChunkEditor'>;
 export const ChunkEditorScreen: React.FC<Props> = ({ route }) => {
   const { chunk } = route.params;
 
-  const apiClient = useMemo(() => new ApiClient('http://localhost:8000', chunk.user_id), [chunk.user_id]);
+  const apiClient = useMemo(() => new ApiClient('http://localhost:8080', chunk.user_id), [chunk.user_id]);
 
   const totalDurationMinutes = useMemo(() => {
     const start = parseISO(chunk.start_time);

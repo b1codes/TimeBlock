@@ -32,7 +32,7 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
   const [startTime, setStartTime] = React.useState(format(startOfHour(new Date()), "yyyy-MM-dd'T'HH:mm:ss'Z'"));
   const [endTime, setEndTime] = React.useState(format(addHours(startOfHour(new Date()), 2), "yyyy-MM-dd'T'HH:mm:ss'Z'"));
 
-  const apiClient = React.useMemo(() => new ApiClient('http://localhost:8000', 'user_1'), []);
+  const apiClient = React.useMemo(() => new ApiClient('http://localhost:8080', 'user_1'), []);
 
   useEffect(() => {
     loadChunks();
