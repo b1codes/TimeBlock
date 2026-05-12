@@ -56,3 +56,10 @@ def update_chunk_tasks(user_id: str, chunk_id: str, tasks: list[Task]) -> TimeCh
         ReturnValues="ALL_NEW"
     )
     return TimeChunkResponse(**response.get('Attributes', {}))
+
+def delete_chunk(user_id: str, chunk_id: str):
+    table = get_table()
+    table.delete_item(
+        Key={'user_id': user_id, 'chunk_id': chunk_id},
+        ConditionExpression="attribute_exists(chunk_id)"
+    )
