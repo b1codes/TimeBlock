@@ -38,6 +38,9 @@ importers:
       expo-linear-gradient:
         specifier: ~12.7.2
         version: 12.7.2(expo@50.0.21(@babel/core@7.29.0)(@react-native/babel-preset@0.83.6(@babel/core@7.29.0))(react-native@0.73.6(@babel/core@7.29.0)(@babel/preset-env@7.29.5(@babel/core@7.29.0))(react@18.2.0))(react@18.2.0))
+      expo-splash-screen:
+        specifier: ~0.26.5
+        version: 0.26.5(expo-modules-autolinking@1.10.3)(expo@50.0.21(@babel/core@7.29.0)(@react-native/babel-preset@0.83.6(@babel/core@7.29.0))(react-native@0.73.6(@babel/core@7.29.0)(@babel/preset-env@7.29.5(@babel/core@7.29.0))(react@18.2.0))(react@18.2.0))
       expo-status-bar:
         specifier: ~1.11.1
         version: 1.11.1
@@ -2298,6 +2301,11 @@ packages:
 
   expo-modules-core@1.11.14:
     resolution: {integrity: sha512-+W+A/jYJdWzA43KEAixhoArEb0EzTsS6T3tObYkZ1EHk8LaBT3hnFant52CnFTeVY4pqv4mgutBua2UQQMAWFA==}
+
+  expo-splash-screen@0.26.5:
+    resolution: {integrity: sha512-FyvA2EWDeQdC3zuoQdXV2VmSANiJzF0hmbtoEEyR6MXoHaYFvxxKyhBeAm61N8C9TtUijIcEgFM6XBCh0wTBVw==}
+    peerDependencies:
+      expo: '*'
 
   expo-status-bar@1.11.1:
     resolution: {integrity: sha512-ddQEtCOgYHTLlFUe/yH67dDBIoct5VIULthyT3LRJbEwdpzAgueKsX2FYK02ldh440V87PWKCamh7R9evk1rrg==}
@@ -7996,6 +8004,15 @@ snapshots:
   expo-modules-core@1.11.14:
     dependencies:
       invariant: 2.2.4
+
+  expo-splash-screen@0.26.5(expo-modules-autolinking@1.10.3)(expo@50.0.21(@babel/core@7.29.0)(@react-native/babel-preset@0.83.6(@babel/core@7.29.0))(react-native@0.73.6(@babel/core@7.29.0)(@babel/preset-env@7.29.5(@babel/core@7.29.0))(react@18.2.0))(react@18.2.0)):
+    dependencies:
+      '@expo/prebuild-config': 6.8.1(expo-modules-autolinking@1.10.3)
+      expo: 50.0.21(@babel/core@7.29.0)(@react-native/babel-preset@0.83.6(@babel/core@7.29.0))(react-native@0.73.6(@babel/core@7.29.0)(@babel/preset-env@7.29.5(@babel/core@7.29.0))(react@18.2.0))(react@18.2.0)
+    transitivePeerDependencies:
+      - encoding
+      - expo-modules-autolinking
+      - supports-color
 
   expo-status-bar@1.11.1: {}
 
