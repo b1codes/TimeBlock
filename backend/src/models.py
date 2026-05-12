@@ -25,4 +25,6 @@ class TimeChunkResponse(TimeChunkBase):
     chunk_id: str
 
 class TimeChunkUpdate(BaseModel):
-    tasks: List[Task]
+    tasks: List[Task] | None = None
+    start_time: datetime | None = None
+    end_time: datetime | None = None

@@ -16,7 +16,7 @@ def create_chunk(chunk: models.TimeChunkCreate, x_user_id: str = Header(...)):
 @router.patch("/chunks/{chunk_id}/", response_model=models.TimeChunkResponse)
 def update_chunk(chunk_id: str, update_data: models.TimeChunkUpdate, x_user_id: str = Header(...)):
     try:
-        return database.update_chunk_tasks(x_user_id, chunk_id, update_data.tasks)
+        return database.update_chunk(x_user_id, chunk_id, update_data)
     except botocore.exceptions.ClientError as e:
         if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
             raise HTTPException(status_code=404, detail="Chunk not found")
