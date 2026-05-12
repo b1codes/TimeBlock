@@ -1,4 +1,5 @@
 import debounce from 'lodash/debounce';
+import type { DebouncedFunc } from 'lodash';
 import { Task, TimeChunk } from '../types';
 
 export class ApiClient {
@@ -8,7 +9,7 @@ export class ApiClient {
   constructor(baseUrl: string, userId: string) {
     this.baseUrl = baseUrl;
     this.userId = userId;
-    
+
     this.executePatch = this.executePatch.bind(this);
     this.debouncedUpdateChunkTasks = debounce(this.executePatch, 750);
   }
@@ -70,5 +71,5 @@ export class ApiClient {
     }
   }
 
-  public debouncedUpdateChunkTasks: (chunkId: string, tasks: Task[]) => void;
+  public debouncedUpdateChunkTasks: DebouncedFunc<(chunkId: string, tasks: Task[]) => Promise<void>>;
 }

@@ -1,38 +1,57 @@
 import React, { useEffect } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  FlatList, 
-  TouchableOpacity, 
-  Alert, 
-  Modal, 
+import {
+  StyleSheet,
+  View,
+  Text,
+  FlatList,
+  Pressable,
+  Alert,
+  Modal,
   TextInput,
-  Button,
-  ActivityIndicator
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withRepeat,
+  withSequence,
+  withTiming,
+  Easing,
+  interpolate,
+} from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Swipeable } from 'react-native-gesture-handler';
+import { format, parseISO, addHours, startOfHour } from 'date-fns';
+
 import { RootStackParamList } from '../navigation/types';
 import { TimeChunk } from '../types';
 import { ApiClient } from '../api/client';
 import { theme } from '../styles/theme';
 import { NoiseBackground } from '../components/NoiseBackground';
-import { format, parseISO, addHours, startOfHour } from 'date-fns';
-import { Swipeable } from 'react-native-gesture-handler';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
+import { GlassSurface } from '../components/GlassSurface';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChunkList'>;
 
 export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [chunks, setChunks] = React.useState<TimeChunk[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [modalVisible, setModalVisible] = React.useState(false);
   const [newTitle, setNewTitle] = React.useState('');
-  const [startTime, setStartTime] = React.useState(format(startOfHour(new Date()), "yyyy-MM-dd'T'HH:mm:ss'Z'"));
-  const [endTime, setEndTime] = React.useState(format(addHours(startOfHour(new Date()), 2), "yyyy-MM-dd'T'HH:mm:ss'Z'"));
+  const [startTime] = React.useState(
+    format(startOfHour(new Date()), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
+  );
+  const [endTime] = React.useState(
+    format(addHours(startOfHour(new Date()), 2), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
+  );
 
-  const apiClient = React.useMemo(() => new ApiClient('http://localhost:8080', 'user_1'), []);
+  const apiClient = React.useMemo(
+    () => new ApiClient('http://localhost:8080', 'user_1'),
+    [],
+  );
 
   useEffect(() => {
     loadChunks();
@@ -74,276 +93,581 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
   const handleDelete = async (chunkId: string) => {
     try {
       await apiClient.deleteChunk(chunkId);
-      setChunks(chunks.filter(c => c.chunk_id !== chunkId));
+      setChunks(chunks.filter((c) => c.chunk_id !== chunkId));
     } catch (error) {
       Alert.alert('Error', 'Failed to delete schedule');
     }
   };
 
   const renderRightActions = (chunkId: string) => (
-    <TouchableOpacity 
+    <Pressable
       style={styles.deleteAction}
       onPress={() => handleDelete(chunkId)}
     >
-      <Text style={styles.deleteActionText}>DELETE</Text>
-    </TouchableOpacity>
+      <LinearGradient
+        colors={['rgba(255, 59, 48, 0.85)', 'rgba(255, 59, 48, 0.65)']}
+        style={StyleSheet.absoluteFill}
+      />
+      <Text style={styles.deleteActionText}>JETTISON</Text>
+    </Pressable>
   );
 
-  const renderItem = ({ item }: { item: TimeChunk }) => {
-    const start = parseISO(item.start_time);
-    const end = parseISO(item.end_time);
-
-    return (
-      <Swipeable renderRightActions={() => renderRightActions(item.chunk_id)}>
-        <TouchableOpacity 
-          style={styles.chunkCard}
-          onPress={() => navigation.navigate('ChunkEditor', { chunk: item })}
-        >
-          <BlurView intensity={15} tint="dark" style={StyleSheet.absoluteFill} />
-          <View style={styles.cardContent}>
-            <View>
-              <Text style={styles.chunkTitle}>{item.title.toUpperCase()}</Text>
-              <Text style={styles.chunkTime}>
-                {format(start, 'HH:mm')} — {format(end, 'HH:mm')}
-              </Text>
-            </View>
-            <Text style={styles.taskCount}>{item.tasks.length} INSTRUMENTS</Text>
-          </View>
-        </TouchableOpacity>
-      </Swipeable>
-    );
-  };
+  const renderItem = ({ item }: { item: TimeChunk }) => (
+    <Swipeable renderRightActions={() => renderRightActions(item.chunk_id)}>
+      <ChunkCard
+        chunk={item}
+        onPress={() => navigation.navigate('ChunkEditor', { chunk: item })}
+      />
+    </Swipeable>
+  );
 
   return (
     <View style={styles.container}>
       <NoiseBackground />
-      <View style={styles.header}>
+
+      <View style={[styles.header, { paddingTop: insets.top + 24 }]}>
+        <View style={styles.headerRow}>
+          <View style={styles.brandDot} />
+          <Text style={styles.eyebrow}>TIMEBLOCK · INSTRUMENTATION</Text>
+        </View>
         <Text style={styles.headerTitle}>CHRONOS</Text>
-        <Text style={styles.headerSubtitle}>TIMEBLOCK INSTRUMENTATION</Text>
+        <View style={styles.headerRule} />
       </View>
+
       <FlatList
         data={chunks}
         renderItem={renderItem}
         keyExtractor={(item) => item.chunk_id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: insets.bottom + 120 },
+        ]}
         onRefresh={loadChunks}
         refreshing={loading}
         ListEmptyComponent={
           !loading ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No active schedules.</Text>
+              <Text style={styles.emptyText}>NO ACTIVE SCHEDULES</Text>
+              <Text style={styles.emptySub}>
+                Initialize a schedule to begin instrumentation.
+              </Text>
             </View>
           ) : null
         }
       />
-      
-      <TouchableOpacity 
-        style={styles.fab}
-        onPress={() => setModalVisible(true)}
-      >
-        <LinearGradient
-          colors={theme.colors.thermal.glow}
-          style={styles.fabGradient}
-        >
-          <Text style={styles.fabText}>+</Text>
-        </LinearGradient>
-      </TouchableOpacity>
 
-      <Modal
+      <ThermalFab
+        bottom={insets.bottom + 24}
+        onPress={() => setModalVisible(true)}
+      />
+
+      <CreateScheduleModal
         visible={modalVisible}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <BlurView intensity={40} tint="dark" style={styles.modalContent}>
-            <Text style={styles.modalTitle}>INITIALIZE SCHEDULE</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="System Designation"
-              placeholderTextColor="rgba(255,255,255,0.3)"
-              value={newTitle}
-              onChangeText={setNewTitle}
-              autoFocus
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
-                <Text style={styles.cancelBtnText}>ABORT</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.createBtn} onPress={handleCreate}>
-                <Text style={styles.createBtnText}>INITIALIZE</Text>
-              </TouchableOpacity>
-            </View>
-          </BlurView>
-        </View>
-      </Modal>
+        onClose={() => setModalVisible(false)}
+        title={newTitle}
+        setTitle={setNewTitle}
+        onSubmit={handleCreate}
+      />
     </View>
   );
 };
 
+// --- ChunkCard ---------------------------------------------------------------
+
+const ChunkCard: React.FC<{ chunk: TimeChunk; onPress: () => void }> = ({
+  chunk,
+  onPress,
+}) => {
+  const press = useSharedValue(0);
+  const start = parseISO(chunk.start_time);
+  const end = parseISO(chunk.end_time);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: interpolate(press.value, [0, 1], [1, 0.985]) },
+    ],
+  }));
+  const glowStyle = useAnimatedStyle(() => ({ opacity: press.value * 0.7 }));
+
+  return (
+    <Animated.View style={[styles.cardOuter, animatedStyle]}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={() => {
+          press.value = withTiming(1, {
+            duration: theme.physics.thermal.excitation,
+            easing: theme.physics.quartOut,
+          });
+        }}
+        onPressOut={() => {
+          press.value = withTiming(0, {
+            duration: theme.physics.thermal.dissipation,
+            easing: theme.physics.quartOut,
+          });
+        }}
+      >
+        <GlassSurface radius={theme.layout.radius.l} intensity={22}>
+          {/* Thermal press wash */}
+          <Animated.View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFill, glowStyle]}
+          >
+            <LinearGradient
+              colors={[theme.colors.thermal.bleed, 'transparent']}
+              start={{ x: 0, y: 1 }}
+              end={{ x: 1, y: 0 }}
+              style={StyleSheet.absoluteFill}
+            />
+          </Animated.View>
+
+          <View style={styles.cardContent}>
+            <View style={styles.cardLeft}>
+              <Text style={styles.cardEyebrow}>
+                {format(start, 'EEE · MMM d').toUpperCase()}
+              </Text>
+              <Text style={styles.cardTitle} numberOfLines={1}>
+                {chunk.title}
+              </Text>
+              <View style={styles.cardTimeRow}>
+                <Text style={styles.cardTime}>{format(start, 'HH:mm')}</Text>
+                <View style={styles.cardTimeRule} />
+                <Text style={styles.cardTime}>{format(end, 'HH:mm')}</Text>
+              </View>
+            </View>
+
+            <View style={styles.cardRight}>
+              <Text style={styles.cardMetric}>{chunk.tasks.length}</Text>
+              <Text style={styles.cardMetricLabel}>
+                {chunk.tasks.length === 1 ? 'INSTRUMENT' : 'INSTRUMENTS'}
+              </Text>
+            </View>
+          </View>
+        </GlassSurface>
+      </Pressable>
+    </Animated.View>
+  );
+};
+
+// --- ThermalFab --------------------------------------------------------------
+
+const ThermalFab: React.FC<{ bottom: number; onPress: () => void }> = ({
+  bottom,
+  onPress,
+}) => {
+  const press = useSharedValue(1);
+  const breath = useSharedValue(0.5);
+
+  useEffect(() => {
+    breath.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 2200, easing: Easing.bezier(0.23, 1, 0.32, 1) }),
+        withTiming(0.45, { duration: 2200, easing: Easing.bezier(0.23, 1, 0.32, 1) }),
+      ),
+      -1,
+      false,
+    );
+  }, [breath]);
+
+  const animatedScale = useAnimatedStyle(() => ({
+    transform: [{ scale: press.value }],
+  }));
+  const animatedHalo = useAnimatedStyle(() => ({ opacity: breath.value }));
+
+  return (
+    <Animated.View style={[styles.fab, { bottom }, animatedScale]}>
+      {/* Halo behind the FAB — gives the thermal "incandescent" feel */}
+      <Animated.View style={[styles.fabHalo, animatedHalo]} pointerEvents="none">
+        <LinearGradient
+          colors={['rgba(255, 59, 48, 0.45)', 'rgba(255, 149, 0, 0.18)', 'transparent']}
+          start={{ x: 0.5, y: 0.5 }}
+          end={{ x: 0.5, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </Animated.View>
+
+      <Pressable
+        onPress={onPress}
+        onPressIn={() => {
+          press.value = withSpring(0.92, theme.physics.spring);
+        }}
+        onPressOut={() => {
+          press.value = withSpring(1, theme.physics.spring);
+        }}
+        style={styles.fabPressable}
+      >
+        <LinearGradient
+          colors={theme.colors.thermal.glow}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.fabGradient}
+        >
+          {/* Inner specular */}
+          <LinearGradient
+            colors={['rgba(255,255,255,0.35)', 'transparent']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 0.55 }}
+            style={StyleSheet.absoluteFill}
+          />
+          {/* + reticle, two crossed hairlines */}
+          <View style={styles.fabCross}>
+            <View style={styles.fabCrossV} />
+            <View style={styles.fabCrossH} />
+          </View>
+        </LinearGradient>
+      </Pressable>
+    </Animated.View>
+  );
+};
+
+// --- Create-schedule modal ---------------------------------------------------
+
+interface ScheduleModalProps {
+  visible: boolean;
+  onClose: () => void;
+  title: string;
+  setTitle: (s: string) => void;
+  onSubmit: () => void;
+}
+
+const CreateScheduleModal: React.FC<ScheduleModalProps> = ({
+  visible,
+  onClose,
+  title,
+  setTitle,
+  onSubmit,
+}) => (
+  <Modal
+    visible={visible}
+    animationType="fade"
+    transparent
+    onRequestClose={onClose}
+    statusBarTranslucent
+  >
+    <BlurView intensity={32} tint="dark" style={StyleSheet.absoluteFill}>
+      <View style={styles.modalDim} />
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+
+      <View style={styles.modalCenter} pointerEvents="box-none">
+        <GlassSurface
+          radius={theme.layout.radius.xl}
+          intensity={42}
+          tone="raised"
+          borderTone="strong"
+          style={styles.modalSheet}
+        >
+          <Text style={styles.modalEyebrow}>NEW SCHEDULE</Text>
+          <Text style={styles.modalTitle}>Initialize a chronos block</Text>
+
+          <Text style={styles.fieldLabel}>SYSTEM DESIGNATION</Text>
+          <View style={styles.fieldWrap}>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. Morning routine"
+              placeholderTextColor={theme.colors.textTertiary}
+              value={title}
+              onChangeText={setTitle}
+              autoFocus
+            />
+          </View>
+
+          <View style={styles.modalButtons}>
+            <Pressable style={styles.cancelBtn} onPress={onClose}>
+              <Text style={styles.cancelBtnText}>ABORT</Text>
+            </Pressable>
+            <Pressable style={styles.createBtnOuter} onPress={onSubmit}>
+              <LinearGradient
+                colors={theme.colors.thermal.glow}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.createBtn}
+              >
+                <Text style={styles.createBtnText}>INITIALIZE</Text>
+              </LinearGradient>
+            </Pressable>
+          </View>
+        </GlassSurface>
+      </View>
+    </BlurView>
+  </Modal>
+);
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
+  container: { flex: 1 },
+
+  // --- Header ---
   header: {
-    paddingTop: 60,
-    paddingHorizontal: theme.spacing.m,
+    paddingHorizontal: theme.spacing.l,
     paddingBottom: theme.spacing.l,
-    borderBottomWidth: 1,
-    borderColor: theme.colors.border,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  brandDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: theme.colors.thermal.corona,
+    shadowColor: theme.colors.thermal.corona,
+    shadowOpacity: 0.9,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  eyebrow: {
+    fontFamily: theme.typography.caption.fontFamily,
+    fontSize: theme.typography.caption.fontSize,
+    letterSpacing: theme.typography.caption.letterSpacing,
+    color: theme.colors.textSecondary,
   },
   headerTitle: {
     fontFamily: theme.typography.h1.fontFamily,
-    fontSize: 32,
+    fontSize: 44,
     color: theme.colors.text,
-    letterSpacing: 4,
+    letterSpacing: 6,
+    lineHeight: 50,
   },
-  headerSubtitle: {
-    fontFamily: theme.typography.caption.fontFamily,
-    fontSize: 10,
-    color: theme.colors.thermal.core,
-    letterSpacing: 2,
-    marginTop: 4,
+  headerRule: {
+    marginTop: theme.spacing.m,
+    height: 1,
+    width: 64,
+    backgroundColor: theme.colors.thermal.core,
+    opacity: 0.85,
   },
+
+  // --- List ---
   listContent: {
-    padding: theme.spacing.m,
+    paddingHorizontal: theme.spacing.l,
+    paddingTop: theme.spacing.s,
   },
-  chunkCard: {
-    height: 100,
-    backgroundColor: theme.colors.glass.base,
-    borderRadius: 12,
+  cardOuter: {
     marginBottom: theme.spacing.m,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: theme.colors.glass.border,
+    borderRadius: theme.layout.radius.l,
+    ...theme.shadows.lifted,
   },
   cardContent: {
-    flex: 1,
-    padding: theme.spacing.m,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    zIndex: 10,
+    justifyContent: 'space-between',
+    paddingVertical: theme.spacing.l - 2,
+    paddingHorizontal: theme.spacing.l,
   },
-  chunkTitle: {
-    fontFamily: theme.typography.h2.fontFamily,
-    fontSize: 16,
-    color: theme.colors.text,
-    letterSpacing: 1,
-  },
-  chunkTime: {
-    fontFamily: theme.typography.body.fontFamily,
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    marginTop: 4,
-  },
-  taskCount: {
+  cardLeft: { flex: 1, paddingRight: theme.spacing.m },
+  cardEyebrow: {
     fontFamily: theme.typography.caption.fontFamily,
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: theme.colors.thermal.core,
-    letterSpacing: 1,
+    fontSize: theme.typography.caption.fontSize,
+    letterSpacing: theme.typography.caption.letterSpacing,
+    color: theme.colors.thermal.corona,
+    marginBottom: 6,
   },
+  cardTitle: {
+    fontFamily: theme.typography.h1.fontFamily,
+    fontSize: 20,
+    letterSpacing: 0.4,
+    color: theme.colors.text,
+  },
+  cardTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 10,
+  },
+  cardTime: {
+    fontFamily: theme.typography.h2.fontFamily,
+    fontSize: 13,
+    letterSpacing: 1.6,
+    color: theme.colors.textSecondary,
+  },
+  cardTimeRule: {
+    width: 16,
+    height: 1,
+    backgroundColor: theme.colors.glass.border,
+  },
+  cardRight: { alignItems: 'flex-end' },
+  cardMetric: {
+    fontFamily: theme.typography.h1.fontFamily,
+    fontSize: 30,
+    letterSpacing: -0.5,
+    color: theme.colors.text,
+    lineHeight: 32,
+  },
+  cardMetricLabel: {
+    fontFamily: theme.typography.micro.fontFamily,
+    fontSize: theme.typography.micro.fontSize,
+    letterSpacing: theme.typography.micro.letterSpacing,
+    color: theme.colors.textTertiary,
+    marginTop: 2,
+  },
+
+  // --- Swipe action ---
   deleteAction: {
-    backgroundColor: theme.colors.error,
     justifyContent: 'center',
     alignItems: 'flex-end',
-    paddingHorizontal: 30,
-    height: 100,
-    borderRadius: 12,
+    paddingHorizontal: theme.spacing.l,
+    width: 120,
     marginBottom: theme.spacing.m,
+    borderRadius: theme.layout.radius.l,
+    overflow: 'hidden',
   },
   deleteActionText: {
     color: '#fff',
     fontFamily: theme.typography.h2.fontFamily,
     fontSize: 12,
-    letterSpacing: 1,
+    letterSpacing: 2,
   },
+
+  // --- Empty state ---
   emptyState: {
-    marginTop: 100,
+    marginTop: 80,
     alignItems: 'center',
+    paddingHorizontal: theme.spacing.l,
   },
   emptyText: {
+    fontFamily: theme.typography.h2.fontFamily,
+    fontSize: 14,
+    letterSpacing: 2.5,
     color: theme.colors.textSecondary,
-    fontFamily: theme.typography.body.fontFamily,
+    marginBottom: 6,
   },
+  emptySub: {
+    fontFamily: theme.typography.body.fontFamily,
+    fontSize: theme.typography.body.fontSize,
+    color: theme.colors.textTertiary,
+    textAlign: 'center',
+    maxWidth: 260,
+  },
+
+  // --- FAB ---
   fab: {
     position: 'absolute',
     right: 24,
-    bottom: 24,
     width: 64,
     height: 64,
+  },
+  fabHalo: {
+    position: 'absolute',
+    left: -24,
+    right: -24,
+    top: -24,
+    bottom: -24,
+    borderRadius: 56,
+    overflow: 'hidden',
+  },
+  fabPressable: {
+    flex: 1,
     borderRadius: 32,
     overflow: 'hidden',
-    elevation: 8,
-    shadowColor: theme.colors.thermal.core,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
+    ...theme.shadows.thermal,
   },
   fabGradient: {
     flex: 1,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  fabText: {
-    color: '#fff',
-    fontSize: 32,
-    fontFamily: theme.typography.h1.fontFamily,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
+  fabCross: {
+    width: 22,
+    height: 22,
     justifyContent: 'center',
-    padding: 24,
+    alignItems: 'center',
   },
-  modalContent: {
-    borderRadius: 24,
-    padding: 32,
-    borderWidth: 1,
-    borderColor: theme.colors.glass.border,
-    overflow: 'hidden',
+  fabCrossV: {
+    position: 'absolute',
+    width: 1.5,
+    height: 18,
+    backgroundColor: '#fff',
+    borderRadius: 1,
+  },
+  fabCrossH: {
+    position: 'absolute',
+    width: 18,
+    height: 1.5,
+    backgroundColor: '#fff',
+    borderRadius: 1,
+  },
+
+  // --- Modal ---
+  modalDim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  modalCenter: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: theme.spacing.l,
+  },
+  modalSheet: {
+    padding: theme.spacing.l + 6,
+    ...theme.shadows.lifted,
+  },
+  modalEyebrow: {
+    fontFamily: theme.typography.caption.fontFamily,
+    fontSize: theme.typography.caption.fontSize,
+    letterSpacing: theme.typography.caption.letterSpacing,
+    color: theme.colors.thermal.corona,
   },
   modalTitle: {
-    fontFamily: theme.typography.h2.fontFamily,
-    fontSize: 18,
+    fontFamily: theme.typography.h1.fontFamily,
+    fontSize: 22,
+    letterSpacing: 0.4,
     color: theme.colors.text,
-    marginBottom: 24,
-    textAlign: 'center',
-    letterSpacing: 2,
+    marginTop: 4,
+    marginBottom: theme.spacing.l,
   },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 12,
-    padding: 16,
-    color: '#FFF',
-    fontFamily: theme.typography.body.fontFamily,
-    marginBottom: 24,
+  fieldLabel: {
+    fontFamily: theme.typography.caption.fontFamily,
+    fontSize: theme.typography.caption.fontSize,
+    letterSpacing: theme.typography.caption.letterSpacing,
+    color: theme.colors.textTertiary,
+    marginBottom: 6,
+  },
+  fieldWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: theme.layout.radius.s,
     borderWidth: 1,
     borderColor: theme.colors.glass.border,
+    paddingHorizontal: theme.spacing.m,
+    marginBottom: theme.spacing.l,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 14,
+    color: theme.colors.text,
+    fontFamily: theme.typography.body.fontFamily,
+    fontSize: theme.typography.body.fontSize + 1,
   },
   modalButtons: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
   },
   cancelBtn: {
-    padding: 16,
+    paddingVertical: 14,
+    paddingHorizontal: theme.spacing.m,
   },
   cancelBtnText: {
     color: theme.colors.textSecondary,
     fontFamily: theme.typography.h2.fontFamily,
-    letterSpacing: 1,
+    fontSize: 13,
+    letterSpacing: 1.5,
+  },
+  createBtnOuter: {
+    borderRadius: theme.layout.radius.s,
+    overflow: 'hidden',
+    ...theme.shadows.thermal,
   },
   createBtn: {
-    backgroundColor: theme.colors.thermal.core,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingHorizontal: theme.spacing.l,
+    paddingVertical: 14,
+    borderRadius: theme.layout.radius.s,
   },
   createBtnText: {
-    color: '#FFF',
+    color: '#fff',
     fontFamily: theme.typography.h2.fontFamily,
-    letterSpacing: 1,
-  }
+    fontSize: 13,
+    letterSpacing: 1.5,
+  },
 });

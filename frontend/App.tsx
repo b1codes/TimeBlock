@@ -39,30 +39,30 @@ const App = () => {
   return (
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider onLayout={onLayoutRootView}>
-        <NavigationContainer>
+        <NavigationContainer
+          theme={{
+            dark: true,
+            colors: {
+              primary: theme.colors.thermal.core,
+              background: theme.colors.background,
+              card: 'transparent',
+              text: theme.colors.text,
+              border: 'transparent',
+              notification: theme.colors.thermal.core,
+            },
+          }}
+        >
           <Stack.Navigator
             initialRouteName="ChunkList"
             screenOptions={{
-              headerStyle: {
-                backgroundColor: theme.colors.background,
-              },
-              headerTintColor: theme.colors.text,
-              headerTitleStyle: {
-                fontFamily: 'Montserrat-Bold',
-              },
-              headerShadowVisible: false,
+              // Hide the stock React Navigation bar — every screen renders
+              // its own brand-consistent header.
+              headerShown: false,
+              contentStyle: { backgroundColor: 'transparent' },
             }}
           >
-            <Stack.Screen 
-              name="ChunkList" 
-              component={ChunkListScreen} 
-              options={{ title: 'CHRONOS' }}
-            />
-            <Stack.Screen 
-              name="ChunkEditor" 
-              component={ChunkEditorScreen} 
-              options={({ route }) => ({ title: route.params.chunk.title.toUpperCase() })}
-            />
+            <Stack.Screen name="ChunkList" component={ChunkListScreen} />
+            <Stack.Screen name="ChunkEditor" component={ChunkEditorScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaProvider>
