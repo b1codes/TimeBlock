@@ -1,4 +1,4 @@
-import { calculateZeroSumTasks, toggleBuffer } from '../src/utils/dragMath';
+import { calculateZeroSumTasks, toggleBuffer, calculateLastTaskWithUnassigned } from '../src/utils/dragMath';
 import { Task } from '../src/types';
 
 describe('calculateZeroSumTasks', () => {
@@ -77,5 +77,68 @@ describe('toggleBuffer', () => {
     expect(result[0].buffer_after_minutes).toBe(0);
     expect(result[0].duration_minutes).toBe(30);
     expect(result[1].duration_minutes).toBe(30);
+  });
+});
+
+describe('calculateLastTaskWithUnassigned', () => {
+  it('grows the last task by exact delta when delta <= unassigned', () => {
+    const tasks: Task[] = [
+      { task_id: '1', title: 'A', duration_minutes: 5, min_duration: 5 },
+      { task_id: '2', title: 'B', duration_minutes: 15, min_duration: 5 },
+    ];
+    const result = calculateLastTaskWithUnassigned(tasks, 10, 20);
+    expect(result[1].duration_minutes).toBe(25);
+    expect(result[0]).toBe(tasks[0]);
+  });
+
+  it('clamps growth to available unassigned minutes', () => {
+    const tasks: Task[] = [
+      { task_id: '1', title: 'A', duration_minutes: 5, min_duration: 5 },
+      { task_id: '2', title: 'B', duration_minutes: 15, min_duration: 5 },
+    ];
+    const result = calculateLastTaskWithUnassigned(tasks, 25, 10);
+    expect(result[1].duration_minutes).toBe(25);
+  });
+
+  it('shrinks the last task when delta is negative', () => {
+    const tasks: Task[] = [
+      { task_id: '1', title: 'A', duration_minutes: 5, min_duration: 5 },
+      { task_id: '2', title: 'B', duration_minutes: 25, min_duration: 5 },
+    ];
+    const result = calculateLastTaskWithUnassigned(tasks, -10, 0);
+    expect(result[1].duration_minutes).toBe(15);
+  });
+
+  it('clamps shrink at min_duration', () => {
+    const tasks: Task[] = [
+      { task_id: '1', title: 'A', duration_minutes: 5, min_duration: 5 },
+      { task_id: '2', title: 'B', duration_minutes: 10, min_duration: 8 },
+    ];
+    const result = calculateLastTaskWithUnassigned(tasks, -10, 0);
+    expect(result[1].duration_minutes).toBe(8);
+  });
+
+  it('returns same reference when delta clamps to 0 (no unassigned, growth requested)', () => {
+    const tasks: Task[] = [
+      { task_id: '1', title: 'A', duration_minutes: 5, min_duration: 5 },
+      { task_id: '2', title: 'B', duration_minutes: 15, min_duration: 5 },
+    ];
+    const result = calculateLastTaskWithUnassigned(tasks, 5, 0);
+    expect(result).toBe(tasks);
+  });
+
+  it('returns same reference when delta clamps to 0 (at min_duration, shrink requested)', () => {
+    const tasks: Task[] = [
+      { task_id: '1', title: 'A', duration_minutes: 5, min_duration: 5 },
+      { task_id: '2', title: 'B', duration_minutes: 8, min_duration: 8 },
+    ];
+    const result = calculateLastTaskWithUnassigned(tasks, -5, 0);
+    expect(result).toBe(tasks);
+  });
+
+  it('returns same reference when tasks is empty', () => {
+    const tasks: Task[] = [];
+    const result = calculateLastTaskWithUnassigned(tasks, 5, 10);
+    expect(result).toBe(tasks);
   });
 });

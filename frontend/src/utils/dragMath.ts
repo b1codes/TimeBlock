@@ -97,3 +97,40 @@ export function toggleBuffer(tasks: Task[], index: number): Task[] {
 
   return newTasks;
 }
+
+/**
+ * Calculates the new duration for the LAST task when its terminal divider is dragged
+ * against the unassigned pool. Returns a new tasks array with only the last task mutated.
+ * Returns the same reference if the clamp resolves to zero delta (or tasks is empty).
+ *
+ * @param tasks Full list of tasks in the chunk.
+ * @param deltaMinutes Positive = grow last task; negative = shrink.
+ * @param unassigned Minutes currently unassigned in the chunk.
+ */
+export function calculateLastTaskWithUnassigned(
+  tasks: Task[],
+  deltaMinutes: number,
+  unassigned: number,
+): Task[] {
+  if (tasks.length === 0) return tasks;
+
+  const lastIndex = tasks.length - 1;
+  const last = tasks[lastIndex];
+
+  let actualDelta = deltaMinutes;
+  if (deltaMinutes > 0) {
+    if (actualDelta > unassigned) actualDelta = unassigned;
+  } else if (deltaMinutes < 0) {
+    const maxShrink = last.duration_minutes - last.min_duration;
+    if (Math.abs(actualDelta) > maxShrink) actualDelta = -maxShrink;
+  }
+
+  if (actualDelta === 0) return tasks;
+
+  const newTasks = [...tasks];
+  newTasks[lastIndex] = {
+    ...last,
+    duration_minutes: last.duration_minutes + actualDelta,
+  };
+  return newTasks;
+}
