@@ -28,6 +28,11 @@ export const ChunkEditorScreen: React.FC<Props> = ({ route, navigation }) => {
   const [tasks, setTasks] = useState<Task[]>(chunk.tasks || []);
   const [editTimesVisible, setEditTimesVisible] = useState(false);
 
+  const eyebrowScale = useSharedValue(1);
+  const eyebrowAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: eyebrowScale.value }],
+  }));
+
   const apiClient = useMemo(
     () => new ApiClient('http://localhost:8080', chunk.user_id),
     [chunk.user_id],
@@ -89,15 +94,23 @@ export const ChunkEditorScreen: React.FC<Props> = ({ route, navigation }) => {
       <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
         <BackButton onPress={() => navigation.goBack()} />
         <View style={styles.titleBlock}>
-          <Pressable
-            onPress={() => setEditTimesVisible(true)}
-            hitSlop={8}
-            disabled={!startLabel || !endLabel}
-          >
-            <Text style={styles.eyebrow} numberOfLines={1}>
-              {startLabel && endLabel ? `${startLabel} — ${endLabel}` : 'SCHEDULE'}
-            </Text>
-          </Pressable>
+          <Animated.View style={eyebrowAnimStyle}>
+            <Pressable
+              onPress={() => setEditTimesVisible(true)}
+              onPressIn={() => {
+                eyebrowScale.value = withSpring(0.93, theme.physics.spring);
+              }}
+              onPressOut={() => {
+                eyebrowScale.value = withSpring(1, theme.physics.spring);
+              }}
+              hitSlop={{ top: 16, bottom: 16, left: 8, right: 8 }}
+              disabled={!startLabel || !endLabel}
+            >
+              <Text style={styles.eyebrow} numberOfLines={1}>
+                {startLabel && endLabel ? `${startLabel} — ${endLabel}` : 'SCHEDULE'}
+              </Text>
+            </Pressable>
+          </Animated.View>
           <Text style={styles.title} numberOfLines={1}>
             {chunk.title}
           </Text>
