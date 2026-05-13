@@ -48,8 +48,13 @@ export const ChunkEditorScreen: React.FC<Props> = ({ route, navigation }) => {
     try {
       const start = parseISO(startTime);
       const end = parseISO(endTime);
-      const diff = Math.abs(differenceInMinutes(end, start));
-      return isNaN(diff) || diff === 0 ? 60 : diff;
+      const diff = differenceInMinutes(end, start);
+      if (isNaN(diff)) return 60;
+      if (diff <= 0) {
+        console.error('ChunkEditorScreen: end_time is not after start_time', { startTime, endTime });
+        return 60;
+      }
+      return diff;
     } catch {
       return 60;
     }
