@@ -4,7 +4,9 @@ import { Task, TimeChunk } from '../types';
 
 export type ChunkUpdate = {
   tasks?: Task[];
+  /** ISO 8601 datetime string, e.g. '2026-05-13T06:30:00Z'. */
   start_time?: string;
+  /** ISO 8601 datetime string, e.g. '2026-05-13T08:00:00Z'. */
   end_time?: string;
 };
 
@@ -64,7 +66,7 @@ export class ApiClient {
 
   private async sendPatch(chunkId: string, payload: ChunkUpdate): Promise<void> {
     try {
-      await fetch(`${this.baseUrl}/chunks/${chunkId}/`, {
+      const response = await fetch(`${this.baseUrl}/chunks/${chunkId}/`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -72,6 +74,9 @@ export class ApiClient {
         },
         body: JSON.stringify(payload),
       });
+      if (!response.ok) {
+        console.error('Failed to sync chunk', response.status, chunkId);
+      }
     } catch (error) {
       console.error('Failed to sync chunk', error);
     }
