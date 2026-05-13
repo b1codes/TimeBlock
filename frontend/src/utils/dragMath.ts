@@ -117,20 +117,20 @@ export function calculateLastTaskWithUnassigned(
   const lastIndex = tasks.length - 1;
   const last = tasks[lastIndex];
 
-  let actualDelta = deltaMinutes;
+  let clampedDelta = deltaMinutes;
   if (deltaMinutes > 0) {
-    if (actualDelta > unassigned) actualDelta = unassigned;
+    if (clampedDelta > unassigned) clampedDelta = unassigned;
   } else if (deltaMinutes < 0) {
     const maxShrink = last.duration_minutes - last.min_duration;
-    if (Math.abs(actualDelta) > maxShrink) actualDelta = -maxShrink;
+    if (Math.abs(clampedDelta) > maxShrink) clampedDelta = -maxShrink;
   }
 
-  if (actualDelta === 0) return tasks;
+  if (clampedDelta === 0) return tasks;
 
   const newTasks = [...tasks];
   newTasks[lastIndex] = {
     ...last,
-    duration_minutes: last.duration_minutes + actualDelta,
+    duration_minutes: last.duration_minutes + clampedDelta,
   };
   return newTasks;
 }
