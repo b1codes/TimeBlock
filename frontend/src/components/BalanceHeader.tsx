@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   },
   container: {
     paddingHorizontal: theme.spacing.l,
-    paddingBottom: theme.spacing.m,
+    paddingBottom: theme.spacing.s,
   },
   row: {
     flexDirection: 'row',
@@ -114,18 +114,18 @@ const styles = StyleSheet.create({
   readout: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginTop: 6,
+    marginTop: 2,
   },
   numeral: {
     fontFamily: theme.typography.h1.fontFamily,
-    fontSize: 44,
+    fontSize: 32,
     letterSpacing: -1,
     color: theme.colors.text,
-    lineHeight: 48,
+    lineHeight: 36,
   },
   unit: {
     fontFamily: theme.typography.caption.fontFamily,
-    fontSize: 14,
+    fontSize: 12,
     letterSpacing: 3,
     color: theme.colors.thermal.corona,
     marginLeft: 6,

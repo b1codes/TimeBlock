@@ -384,14 +384,14 @@ const CreateTaskModal: React.FC<ModalProps> = ({
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   scrollContent: {
-    paddingVertical: theme.spacing.m,
-    paddingBottom: theme.spacing.xl,
+    paddingVertical: theme.spacing.s,
+    paddingBottom: theme.spacing.l,
   },
 
   // --- Unassigned slot ---
   slotOuter: {
     marginHorizontal: theme.spacing.m,
-    marginVertical: 4,
+    marginVertical: 2,
     borderRadius: theme.layout.radius.m,
     overflow: 'hidden',
   },

@@ -98,7 +98,7 @@ export const DraggableDivider: React.FC<Props> = ({
 
   // Buffer is only meaningful for between-variant dividers.
   const isBuffer = !isTerminal && bufferDuration > 0;
-  const height = isBuffer ? bufferDuration * theme.layout.minutesToHeight : 28;
+  const height = isBuffer ? bufferDuration * theme.layout.minutesToHeight : 16;
   const haloColors = isTerminal ? TERMINAL_HALO_COLORS : BETWEEN_HALO_COLORS;
 
   return (
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   handle: { flex: 1, borderRadius: 2 },
   bufferLabelWrap: {
     position: 'absolute',
-    bottom: 6,
+    bottom: 4,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,

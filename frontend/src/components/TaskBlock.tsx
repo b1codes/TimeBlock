@@ -174,7 +174,7 @@ export const TaskBlock: React.FC<Props> = ({
 const styles = StyleSheet.create({
   outer: {
     marginHorizontal: theme.spacing.m,
-    marginVertical: 3,
+    marginVertical: 1.5,
     borderRadius: theme.layout.radius.m,
     ...theme.shadows.lifted,
   },
