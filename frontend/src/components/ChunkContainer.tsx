@@ -85,7 +85,17 @@ export const ChunkContainer: React.FC<Props> = ({
 
   const handleLastDrag = (deltaMinutes: number) => {
     if (tasks.length === 0) return;
-    const updatedTasks = calculateLastTaskWithUnassigned(tasks, deltaMinutes, unassigned);
+    // Recompute unassigned from current tasks instead of using the render closure,
+    // so rapid multi-tick drags within a render cycle don't compute against a stale ceiling.
+    const liveUnassigned = Math.max(
+      0,
+      totalDurationMinutes -
+        tasks.reduce(
+          (s, t) => s + (t.duration_minutes || 0) + (t.buffer_after_minutes || 0),
+          0,
+        ),
+    );
+    const updatedTasks = calculateLastTaskWithUnassigned(tasks, deltaMinutes, liveUnassigned);
     if (updatedTasks === tasks) {
       const lastId = tasks[tasks.length - 1].task_id;
       setLimitedTaskIds(new Set([lastId]));
