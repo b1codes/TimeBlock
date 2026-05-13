@@ -22,8 +22,8 @@ describe('ApiClient', () => {
     const tasks2: Task[] = [{ task_id: '71061497-c5db-4507-9062-8b752cde7391', title: 'A', duration_minutes: 30, min_duration: 10 }];
     
     // Call multiple times in rapid succession
-    client.debouncedUpdateChunkTasks('chunk1', tasks1);
-    client.debouncedUpdateChunkTasks('chunk1', tasks2);
+    client.debouncedUpdateChunk('chunk1', { tasks: tasks1 });
+    client.debouncedUpdateChunk('chunk1', { tasks: tasks2 });
     
     // Fast-forward 500ms - should not have fired yet
     jest.advanceTimersByTime(500);

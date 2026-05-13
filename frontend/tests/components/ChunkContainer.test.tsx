@@ -2,6 +2,7 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import { ChunkContainer } from '../../src/components/ChunkContainer';
 import { TimeChunk } from '../../src/types';
+import { ApiClient } from '../../src/api/client';
 
 const MOCK_CHUNK: TimeChunk = {
   user_id: 'user_1',
@@ -16,21 +17,38 @@ const MOCK_CHUNK: TimeChunk = {
   ],
 };
 
+const mockApiClient = new ApiClient('http://localhost:8080', 'user_1');
+const mockOnTasksChange = jest.fn();
+
 describe('ChunkContainer', () => {
   it('renders tasks and BalanceHeader', () => {
     const { getByText } = render(
-      <ChunkContainer initialChunk={MOCK_CHUNK} totalDurationMinutes={120} />
+      <ChunkContainer 
+        initialChunk={MOCK_CHUNK} 
+        totalDurationMinutes={120} 
+        apiClient={mockApiClient}
+        tasks={MOCK_CHUNK.tasks}
+        onTasksChange={mockOnTasksChange}
+      />
     );
 
     expect(getByText('Task 1')).toBeTruthy();
     expect(getByText('Task 2')).toBeTruthy();
-    expect(getByText('Unassigned: 60m')).toBeTruthy();
+    // BalanceHeader shows numeral and unit separately
+    expect(getByText('60')).toBeTruthy();
+    expect(getByText('M')).toBeTruthy();
   });
 
   it('calculates unassigned time correctly', () => {
     const { getByText } = render(
-      <ChunkContainer initialChunk={MOCK_CHUNK} totalDurationMinutes={100} />
+      <ChunkContainer 
+        initialChunk={MOCK_CHUNK} 
+        totalDurationMinutes={100} 
+        apiClient={mockApiClient}
+        tasks={MOCK_CHUNK.tasks}
+        onTasksChange={mockOnTasksChange}
+      />
     );
-    expect(getByText('Unassigned: 40m')).toBeTruthy();
+    expect(getByText('40')).toBeTruthy();
   });
 });
