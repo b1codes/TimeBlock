@@ -22,7 +22,11 @@ import { TaskBlock } from './TaskBlock';
 import { DraggableDivider } from './DraggableDivider';
 import { BalanceHeader } from './BalanceHeader';
 import { GlassSurface } from './GlassSurface';
-import { calculateZeroSumTasks, toggleBuffer } from '../utils/dragMath';
+import {
+  calculateZeroSumTasks,
+  toggleBuffer,
+  calculateLastTaskWithUnassigned,
+} from '../utils/dragMath';
 import { theme } from '../styles/theme';
 import { ApiClient } from '../api/client';
 
@@ -30,14 +34,17 @@ interface Props {
   initialChunk: TimeChunk;
   totalDurationMinutes: number;
   apiClient: ApiClient;
+  tasks: Task[];
+  onTasksChange: (tasks: Task[]) => void;
 }
 
 export const ChunkContainer: React.FC<Props> = ({
   initialChunk,
   totalDurationMinutes,
   apiClient,
+  tasks,
+  onTasksChange,
 }) => {
-  const [tasks, setTasks] = useState<Task[]>(initialChunk.tasks || []);
   const [limitedTaskIds, setLimitedTaskIds] = useState<Set<string>>(new Set());
   const [modalVisible, setModalVisible] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -48,6 +55,11 @@ export const ChunkContainer: React.FC<Props> = ({
     0,
   );
   const unassigned = Math.max(0, totalDurationMinutes - currentTotal) || 0;
+
+  const commitTasks = (updated: Task[]) => {
+    onTasksChange(updated);
+    apiClient.debouncedUpdateChunk(initialChunk.chunk_id, { tasks: updated });
+  };
 
   const handleDrag = (index: number, deltaMinutes: number) => {
     const updatedTasks = calculateZeroSumTasks(tasks, index, deltaMinutes);
@@ -67,9 +79,20 @@ export const ChunkContainer: React.FC<Props> = ({
       newLimitedIds.add(tasks[index + 1].task_id);
     }
 
-    setTasks(updatedTasks);
     setLimitedTaskIds(newLimitedIds);
-    apiClient.debouncedUpdateChunkTasks(initialChunk.chunk_id, updatedTasks);
+    commitTasks(updatedTasks);
+  };
+
+  const handleLastDrag = (deltaMinutes: number) => {
+    if (tasks.length === 0) return;
+    const updatedTasks = calculateLastTaskWithUnassigned(tasks, deltaMinutes, unassigned);
+    if (updatedTasks === tasks) {
+      const lastId = tasks[tasks.length - 1].task_id;
+      setLimitedTaskIds(new Set([lastId]));
+      return;
+    }
+    setLimitedTaskIds(new Set());
+    commitTasks(updatedTasks);
   };
 
   const handleDragEnd = () => {
@@ -82,16 +105,14 @@ export const ChunkContainer: React.FC<Props> = ({
       Alert.alert('ERROR', 'INSUFFICIENT ATMOSPHERE FOR BUFFER');
       return;
     }
-    setTasks(updatedTasks);
-    apiClient.debouncedUpdateChunkTasks(initialChunk.chunk_id, updatedTasks);
+    commitTasks(updatedTasks);
   };
 
   const handleTitleChange = (taskId: string, newTitle: string) => {
     const updatedTasks = tasks.map((t) =>
       t.task_id === taskId ? { ...t, title: newTitle } : t,
     );
-    setTasks(updatedTasks);
-    apiClient.debouncedUpdateChunkTasks(initialChunk.chunk_id, updatedTasks);
+    commitTasks(updatedTasks);
   };
 
   const handleAddTask = () => {
@@ -113,35 +134,47 @@ export const ChunkContainer: React.FC<Props> = ({
       min_duration: 5,
     };
 
-    const updatedTasks = [...tasks, newTask];
-    setTasks(updatedTasks);
+    commitTasks([...tasks, newTask]);
     setModalVisible(false);
     setNewTaskTitle('');
     setNewTaskDuration('15');
-    apiClient.debouncedUpdateChunkTasks(initialChunk.chunk_id, updatedTasks);
   };
 
   return (
     <View style={styles.safeArea}>
       <BalanceHeader unassignedMinutes={unassigned} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {tasks.map((task, index) => (
-          <React.Fragment key={task.task_id}>
-            <TaskBlock
-              {...task}
-              isLimitReached={limitedTaskIds.has(task.task_id)}
-              onTitleChange={(title) => handleTitleChange(task.task_id, title)}
-            />
-            {index < tasks.length - 1 && (
-              <DraggableDivider
-                onDrag={(delta) => handleDrag(index, delta)}
-                onDragEnd={handleDragEnd}
-                onPress={() => handleToggleBuffer(index)}
-                bufferDuration={task.buffer_after_minutes}
+        {tasks.map((task, index) => {
+          const isLast = index === tasks.length - 1;
+          const canExtendLast =
+            isLast && (unassigned > 0 || task.duration_minutes > task.min_duration);
+
+          return (
+            <React.Fragment key={task.task_id}>
+              <TaskBlock
+                {...task}
+                isLimitReached={limitedTaskIds.has(task.task_id)}
+                onTitleChange={(title) => handleTitleChange(task.task_id, title)}
               />
-            )}
-          </React.Fragment>
-        ))}
+              {!isLast && (
+                <DraggableDivider
+                  variant="between"
+                  onDrag={(delta) => handleDrag(index, delta)}
+                  onDragEnd={handleDragEnd}
+                  onPress={() => handleToggleBuffer(index)}
+                  bufferDuration={task.buffer_after_minutes}
+                />
+              )}
+              {isLast && canExtendLast && (
+                <DraggableDivider
+                  variant="terminal"
+                  onDrag={handleLastDrag}
+                  onDragEnd={handleDragEnd}
+                />
+              )}
+            </React.Fragment>
+          );
+        })}
 
         {unassigned > 0 && (
           <UnassignedSlot
