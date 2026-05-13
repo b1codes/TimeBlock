@@ -2,6 +2,12 @@ import debounce from 'lodash/debounce';
 import type { DebouncedFunc } from 'lodash';
 import { Task, TimeChunk } from '../types';
 
+export type ChunkUpdate = {
+  tasks?: Task[];
+  start_time?: string;
+  end_time?: string;
+};
+
 export class ApiClient {
   private baseUrl: string;
   private userId: string;
@@ -10,13 +16,13 @@ export class ApiClient {
     this.baseUrl = baseUrl;
     this.userId = userId;
 
-    this.executePatch = this.executePatch.bind(this);
-    this.debouncedUpdateChunkTasks = debounce(this.executePatch, 750);
+    this.sendPatch = this.sendPatch.bind(this);
+    this.debouncedUpdateChunk = debounce(this.sendPatch, 750);
   }
 
   public async getChunks(): Promise<TimeChunk[]> {
     const response = await fetch(`${this.baseUrl}/chunks/`, {
-      headers: { 'x-user-id': this.userId }
+      headers: { 'x-user-id': this.userId },
     });
     if (!response.ok) throw new Error('Failed to fetch chunks');
     return response.json();
@@ -24,25 +30,25 @@ export class ApiClient {
 
   public async getTemplates(): Promise<TimeChunk[]> {
     const response = await fetch(`${this.baseUrl}/templates/`, {
-      headers: { 'x-user-id': this.userId }
+      headers: { 'x-user-id': this.userId },
     });
     if (!response.ok) throw new Error('Failed to fetch templates');
     return response.json();
   }
 
-  public async createChunk(params: { 
-    title: string; 
-    start_time: string; 
-    end_time: string; 
-    template_id?: string 
+  public async createChunk(params: {
+    title: string;
+    start_time: string;
+    end_time: string;
+    template_id?: string;
   }): Promise<TimeChunk> {
     const response = await fetch(`${this.baseUrl}/chunks/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-user-id': this.userId
+        'x-user-id': this.userId,
       },
-      body: JSON.stringify(params)
+      body: JSON.stringify(params),
     });
     if (!response.ok) throw new Error('Failed to create chunk');
     return response.json();
@@ -51,25 +57,25 @@ export class ApiClient {
   public async deleteChunk(chunkId: string): Promise<void> {
     const response = await fetch(`${this.baseUrl}/chunks/${chunkId}/`, {
       method: 'DELETE',
-      headers: { 'x-user-id': this.userId }
+      headers: { 'x-user-id': this.userId },
     });
     if (!response.ok) throw new Error('Failed to delete chunk');
   }
 
-  private async executePatch(chunkId: string, tasks: Task[]): Promise<void> {
+  private async sendPatch(chunkId: string, payload: ChunkUpdate): Promise<void> {
     try {
       await fetch(`${this.baseUrl}/chunks/${chunkId}/`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': this.userId
+          'x-user-id': this.userId,
         },
-        body: JSON.stringify({ tasks })
+        body: JSON.stringify(payload),
       });
     } catch (error) {
-      console.error('Failed to sync tasks', error);
+      console.error('Failed to sync chunk', error);
     }
   }
 
-  public debouncedUpdateChunkTasks: DebouncedFunc<(chunkId: string, tasks: Task[]) => Promise<void>>;
+  public debouncedUpdateChunk: DebouncedFunc<(chunkId: string, payload: ChunkUpdate) => Promise<void>>;
 }
