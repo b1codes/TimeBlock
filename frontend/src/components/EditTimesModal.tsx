@@ -23,22 +23,6 @@ interface Props {
   onSubmit: (next: { start_time: string; end_time: string }) => void;
 }
 
-function parseHHmm(value: string): [number, number] | null {
-  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
-  if (!match) return null;
-  const h = Number(match[1]);
-  const m = Number(match[2]);
-  if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
-  if (h < 0 || h > 23 || m < 0 || m > 59) return null;
-  return [h, m];
-}
-
-function composeISO(baseISO: string, hours: number, minutes: number): string {
-  const base = parseISO(baseISO);
-  const next = setSeconds(setMinutes(setHours(base, hours), minutes), 0);
-  return next.toISOString();
-}
-
 export const EditTimesModal: React.FC<Props> = ({
   visible,
   startTime,
@@ -270,3 +254,22 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
   },
 });
+
+function parseHHmm(value: string): [number, number] | null {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  const h = Number(match[1]);
+  const m = Number(match[2]);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+  if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+  return [h, m];
+}
+
+// setHours/setMinutes operate in local time; .toISOString() then converts to UTC.
+// Display uses format(..., 'HH:mm') which is also local, so the round-trip is stable
+// as long as the user's timezone doesn't change between display and submit.
+function composeISO(baseISO: string, hours: number, minutes: number): string {
+  const base = parseISO(baseISO);
+  const next = setSeconds(setMinutes(setHours(base, hours), minutes), 0);
+  return next.toISOString();
+}
