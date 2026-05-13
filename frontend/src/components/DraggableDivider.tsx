@@ -18,16 +18,33 @@ interface Props {
   onDragEnd: () => void;
   bufferDuration?: number;
   onPress?: () => void;
+  variant?: 'between' | 'terminal';
 }
+
+const BETWEEN_HALO_COLORS = [
+  'rgba(255, 59, 48, 0)',
+  'rgba(255, 59, 48, 0.45)',
+  'rgba(255, 149, 0, 0.18)',
+  'rgba(255, 149, 0, 0)',
+] as const;
+
+const TERMINAL_HALO_COLORS = [
+  'rgba(20, 90, 200, 0)',
+  'rgba(30, 110, 220, 0.45)',
+  'rgba(20, 90, 200, 0.18)',
+  'rgba(20, 90, 200, 0)',
+] as const;
 
 export const DraggableDivider: React.FC<Props> = ({
   onDrag,
   onDragEnd,
   bufferDuration = 0,
   onPress,
+  variant = 'between',
 }) => {
   const isDragging = useSharedValue(0);
   const lastEmittedY = useSharedValue(0);
+  const isTerminal = variant === 'terminal';
 
   const snapPx = theme.layout.snapIncrement * theme.layout.minutesToHeight;
 
@@ -57,9 +74,9 @@ export const DraggableDivider: React.FC<Props> = ({
       if (success && onPress) runOnJS(onPress)();
     });
 
-  const composed = Gesture.Exclusive(panGesture, tapGesture);
+  // Terminal variant is drag-only: no tap composition.
+  const composed = isTerminal ? panGesture : Gesture.Exclusive(panGesture, tapGesture);
 
-  // Handle bar: subtle in repose, expanding + warming when dragged
   const animatedBarStyle = useAnimatedStyle(() => ({
     opacity: interpolate(isDragging.value, [0, 1], [0.45, 1], Extrapolation.CLAMP),
     transform: [
@@ -68,7 +85,6 @@ export const DraggableDivider: React.FC<Props> = ({
     ],
   }));
 
-  // Thermal glow halo behind the handle when active
   const animatedHaloStyle = useAnimatedStyle(() => ({
     opacity: isDragging.value,
     transform: [
@@ -76,20 +92,20 @@ export const DraggableDivider: React.FC<Props> = ({
     ],
   }));
 
-  // Hairline tracks above/below the handle dim when dragging for focus
   const animatedTrackStyle = useAnimatedStyle(() => ({
     opacity: interpolate(isDragging.value, [0, 1], [0.5, 0.15], Extrapolation.CLAMP),
   }));
 
-  const isBuffer = bufferDuration > 0;
+  // Buffer is only meaningful for between-variant dividers.
+  const isBuffer = !isTerminal && bufferDuration > 0;
   const height = isBuffer ? bufferDuration * theme.layout.minutesToHeight : 28;
+  const haloColors = isTerminal ? TERMINAL_HALO_COLORS : BETWEEN_HALO_COLORS;
 
   return (
     <GestureDetector gesture={composed}>
       <View style={[styles.wrapper, { height }]}>
         {isBuffer && (
           <>
-            {/* Buffer zone — sunken glass tone, distinct from task surfaces */}
             <View style={styles.bufferFill} />
             <LinearGradient
               colors={[
@@ -104,19 +120,12 @@ export const DraggableDivider: React.FC<Props> = ({
           </>
         )}
 
-        {/* Hairline tracks — give the divider structural presence */}
         <Animated.View style={[styles.track, styles.trackLeft, animatedTrackStyle]} />
         <Animated.View style={[styles.track, styles.trackRight, animatedTrackStyle]} />
 
-        {/* Thermal halo — only visible when dragging */}
         <Animated.View style={[styles.haloWrap, animatedHaloStyle]} pointerEvents="none">
           <LinearGradient
-            colors={[
-              'rgba(255, 59, 48, 0)',
-              'rgba(255, 59, 48, 0.45)',
-              'rgba(255, 149, 0, 0.18)',
-              'rgba(255, 149, 0, 0)',
-            ]}
+            colors={[...haloColors]}
             locations={[0, 0.4, 0.6, 1]}
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
@@ -124,7 +133,6 @@ export const DraggableDivider: React.FC<Props> = ({
           />
         </Animated.View>
 
-        {/* The handle itself — gradient bar */}
         <Animated.View style={[styles.handleWrap, animatedBarStyle]}>
           <LinearGradient
             colors={[
@@ -168,14 +176,8 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: theme.colors.glass.border,
   },
-  trackLeft: {
-    left: 0,
-    right: '55%',
-  },
-  trackRight: {
-    left: '55%',
-    right: 0,
-  },
+  trackLeft: { left: 0, right: '55%' },
+  trackRight: { left: '55%', right: 0 },
   haloWrap: {
     position: 'absolute',
     left: 0,
@@ -189,10 +191,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     overflow: 'hidden',
   },
-  handle: {
-    flex: 1,
-    borderRadius: 2,
-  },
+  handle: { flex: 1, borderRadius: 2 },
   bufferLabelWrap: {
     position: 'absolute',
     bottom: 6,

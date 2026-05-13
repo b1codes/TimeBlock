@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View, Pressable, Text } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,8 +11,10 @@ import Animated, {
 
 import { RootStackParamList } from '../navigation/types';
 import { ChunkContainer } from '../components/ChunkContainer';
+import { EditTimesModal } from '../components/EditTimesModal';
 import { NoiseBackground } from '../components/NoiseBackground';
 import { ApiClient } from '../api/client';
+import { Task } from '../types';
 import { theme } from '../styles/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChunkEditor'>;
@@ -21,6 +23,16 @@ export const ChunkEditorScreen: React.FC<Props> = ({ route, navigation }) => {
   const { chunk } = route.params;
   const insets = useSafeAreaInsets();
 
+  const [startTime, setStartTime] = useState(chunk.start_time);
+  const [endTime, setEndTime] = useState(chunk.end_time);
+  const [tasks, setTasks] = useState<Task[]>(chunk.tasks || []);
+  const [editTimesVisible, setEditTimesVisible] = useState(false);
+
+  const eyebrowScale = useSharedValue(1);
+  const eyebrowAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: eyebrowScale.value }],
+  }));
+
   const apiClient = useMemo(
     () => new ApiClient('http://localhost:8080', chunk.user_id),
     [chunk.user_id],
@@ -28,36 +40,57 @@ export const ChunkEditorScreen: React.FC<Props> = ({ route, navigation }) => {
 
   useEffect(() => {
     return () => {
-      apiClient.debouncedUpdateChunkTasks.flush();
+      apiClient.debouncedUpdateChunk.flush();
     };
   }, [apiClient]);
 
   const totalDurationMinutes = useMemo(() => {
     try {
-      const start = parseISO(chunk.start_time);
-      const end = parseISO(chunk.end_time);
-      const diff = Math.abs(differenceInMinutes(end, start));
-      return isNaN(diff) || diff === 0 ? 60 : diff;
+      const start = parseISO(startTime);
+      const end = parseISO(endTime);
+      const diff = differenceInMinutes(end, start);
+      if (isNaN(diff)) return 60;
+      if (diff <= 0) {
+        console.error('ChunkEditorScreen: end_time is not after start_time', { startTime, endTime });
+        return 60;
+      }
+      return diff;
     } catch {
       return 60;
     }
-  }, [chunk.start_time, chunk.end_time]);
+  }, [startTime, endTime]);
 
-  const start = useMemo(() => {
+  const startLabel = useMemo(() => {
     try {
-      return format(parseISO(chunk.start_time), 'HH:mm');
+      return format(parseISO(startTime), 'HH:mm');
     } catch {
       return '';
     }
-  }, [chunk.start_time]);
+  }, [startTime]);
 
-  const end = useMemo(() => {
+  const endLabel = useMemo(() => {
     try {
-      return format(parseISO(chunk.end_time), 'HH:mm');
+      return format(parseISO(endTime), 'HH:mm');
     } catch {
       return '';
     }
-  }, [chunk.end_time]);
+  }, [endTime]);
+
+  const currentTotalMinutes = useMemo(
+    () =>
+      tasks.reduce(
+        (sum, t) => sum + (t.duration_minutes || 0) + (t.buffer_after_minutes || 0),
+        0,
+      ),
+    [tasks],
+  );
+
+  const handleTimesCommit = (next: { start_time: string; end_time: string }) => {
+    setStartTime(next.start_time);
+    setEndTime(next.end_time);
+    setEditTimesVisible(false);
+    apiClient.debouncedUpdateChunk(chunk.chunk_id, next);
+  };
 
   return (
     <View style={styles.container}>
@@ -66,9 +99,23 @@ export const ChunkEditorScreen: React.FC<Props> = ({ route, navigation }) => {
       <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
         <BackButton onPress={() => navigation.goBack()} />
         <View style={styles.titleBlock}>
-          <Text style={styles.eyebrow} numberOfLines={1}>
-            {start && end ? `${start} — ${end}` : 'SCHEDULE'}
-          </Text>
+          <Animated.View style={eyebrowAnimStyle}>
+            <Pressable
+              onPress={() => setEditTimesVisible(true)}
+              onPressIn={() => {
+                eyebrowScale.value = withSpring(0.93, theme.physics.spring);
+              }}
+              onPressOut={() => {
+                eyebrowScale.value = withSpring(1, theme.physics.spring);
+              }}
+              hitSlop={{ top: 16, bottom: 16, left: 8, right: 8 }}
+              disabled={!startLabel || !endLabel}
+            >
+              <Text style={styles.eyebrow} numberOfLines={1}>
+                {startLabel && endLabel ? `${startLabel} — ${endLabel}` : 'SCHEDULE'}
+              </Text>
+            </Pressable>
+          </Animated.View>
           <Text style={styles.title} numberOfLines={1}>
             {chunk.title}
           </Text>
@@ -80,6 +127,17 @@ export const ChunkEditorScreen: React.FC<Props> = ({ route, navigation }) => {
         initialChunk={chunk}
         totalDurationMinutes={totalDurationMinutes}
         apiClient={apiClient}
+        tasks={tasks}
+        onTasksChange={setTasks}
+      />
+
+      <EditTimesModal
+        visible={editTimesVisible}
+        startTime={startTime}
+        endTime={endTime}
+        currentTotalMinutes={currentTotalMinutes}
+        onClose={() => setEditTimesVisible(false)}
+        onSubmit={handleTimesCommit}
       />
     </View>
   );
@@ -104,7 +162,6 @@ const BackButton: React.FC<{ onPress: () => void }> = ({ onPress }) => {
         hitSlop={12}
         style={styles.backPressable}
       >
-        {/* Chevron: square corner rotated 45° = clean leftward < */}
         <View style={styles.chevron} />
       </Pressable>
     </Animated.View>

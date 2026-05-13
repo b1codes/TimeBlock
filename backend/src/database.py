@@ -1,8 +1,9 @@
 import boto3
+import botocore.exceptions
 import os
 from boto3.dynamodb.conditions import Key
 from uuid import uuid4
-from .models import TimeChunkResponse, TimeChunkCreate, Task
+from .models import TimeChunkResponse, TimeChunkCreate, Task, TimeChunkUpdate
 
 def get_table():
     endpoint_url = os.getenv('DYNAMODB_ENDPOINT_URL')
@@ -45,13 +46,39 @@ def create_chunk(user_id: str, chunk: TimeChunkCreate) -> TimeChunkResponse:
     table.put_item(Item=item)
     return TimeChunkResponse(**item)
 
-def update_chunk_tasks(user_id: str, chunk_id: str, tasks: list[Task]) -> TimeChunkResponse:
+def update_chunk(user_id: str, chunk_id: str, update: TimeChunkUpdate) -> TimeChunkResponse:
     table = get_table()
-    tasks_dict = [task.model_dump(mode='json') for task in tasks]
+
+    set_clauses: list[str] = []
+    values: dict[str, object] = {}
+
+    if update.tasks is not None:
+        set_clauses.append("tasks = :tasks")
+        values[":tasks"] = [task.model_dump(mode='json') for task in update.tasks]
+    if update.start_time is not None:
+        set_clauses.append("start_time = :start_time")
+        values[":start_time"] = update.start_time.isoformat()
+    if update.end_time is not None:
+        set_clauses.append("end_time = :end_time")
+        values[":end_time"] = update.end_time.isoformat()
+
+    if not set_clauses:
+        # No-op partial update: verify the chunk exists, return current state.
+        # We surface chunk-not-found by raising the same ClientError shape that
+        # update_item produces, so routes.py can keep a single 404 handler.
+        response = table.get_item(Key={'user_id': user_id, 'chunk_id': chunk_id})
+        item = response.get('Item')
+        if item is None:
+            raise botocore.exceptions.ClientError(
+                {'Error': {'Code': 'ConditionalCheckFailedException', 'Message': 'Chunk not found'}},
+                'GetItem'
+            )
+        return TimeChunkResponse(**item)
+
     response = table.update_item(
         Key={'user_id': user_id, 'chunk_id': chunk_id},
-        UpdateExpression="SET tasks = :tasks",
-        ExpressionAttributeValues={':tasks': tasks_dict},
+        UpdateExpression="SET " + ", ".join(set_clauses),
+        ExpressionAttributeValues=values,
         ConditionExpression="attribute_exists(chunk_id)",
         ReturnValues="ALL_NEW"
     )
