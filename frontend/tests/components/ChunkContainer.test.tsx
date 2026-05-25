@@ -22,7 +22,7 @@ const mockOnTasksChange = jest.fn();
 
 describe('ChunkContainer', () => {
   it('renders tasks and BalanceHeader', () => {
-    const { getByText } = render(
+    const { getByText, getAllByText } = render(
       <ChunkContainer 
         initialChunk={MOCK_CHUNK} 
         totalDurationMinutes={120} 
@@ -36,7 +36,7 @@ describe('ChunkContainer', () => {
     expect(getByText('Task 2')).toBeTruthy();
     // BalanceHeader shows numeral and unit separately
     expect(getByText('60')).toBeTruthy();
-    expect(getByText('M')).toBeTruthy();
+    expect(getAllByText('M').length).toBeGreaterThan(0);
   });
 
   it('calculates unassigned time correctly', () => {

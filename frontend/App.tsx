@@ -9,7 +9,9 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import { Montserrat_700Bold } from '@expo-google-fonts/montserrat';
 import { OpenSans_300Light, OpenSans_400Regular } from '@expo-google-fonts/open-sans';
+import { Provider } from 'react-redux';
 
+import { store } from './src/store';
 import { RootStackParamList } from './src/navigation/types';
 import { ChunkListScreen } from './src/screens/ChunkListScreen';
 import { ChunkEditorScreen } from './src/screens/ChunkEditorScreen';
@@ -37,9 +39,10 @@ const App = () => {
   }
 
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <SafeAreaProvider onLayout={onLayoutRootView}>
-        <NavigationContainer
+    <Provider store={store}>
+      <GestureHandlerRootView style={styles.container}>
+        <SafeAreaProvider onLayout={onLayoutRootView}>
+          <NavigationContainer
           theme={{
             dark: true,
             colors: {
@@ -67,7 +70,8 @@ const App = () => {
         </NavigationContainer>
       </SafeAreaProvider>
       <StatusBar style="light" />
-    </GestureHandlerRootView>
+      </GestureHandlerRootView>
+    </Provider>
   );
 };
 

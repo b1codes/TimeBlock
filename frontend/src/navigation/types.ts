@@ -2,5 +2,5 @@ import { TimeChunk } from '../types';
 
 export type RootStackParamList = {
   ChunkList: undefined;
-  ChunkEditor: { chunk: TimeChunk };
+  ChunkEditor: { chunkId: string };
 };

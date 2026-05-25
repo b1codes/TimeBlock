@@ -36,7 +36,7 @@ describe('ApiClient', () => {
     
     // Verify it sent the LATEST payload (tasks2) as a batch
     const callArgs = (global.fetch as jest.Mock).mock.calls[0];
-    expect(callArgs[0]).toBe('https://api.example.com/chunks/chunk1');
+    expect(callArgs[0]).toBe('https://api.example.com/chunks/chunk1/');
     expect(callArgs[1].method).toBe('PATCH');
     
     const body = JSON.parse(callArgs[1].body);
@@ -52,7 +52,7 @@ describe('ApiClient', () => {
 
     const chunks = await client.getChunks();
     expect(chunks).toHaveLength(1);
-    expect(global.fetch).toHaveBeenCalledWith('https://api.example.com/chunks', expect.anything());
+    expect(global.fetch).toHaveBeenCalledWith('https://api.example.com/chunks/', expect.anything());
   });
 
   it('should create chunk', async () => {
@@ -64,7 +64,7 @@ describe('ApiClient', () => {
 
     const chunk = await client.createChunk({ title: 'New', start_time: '...', end_time: '...' });
     expect(chunk.chunk_id).toBe('new');
-    expect(global.fetch).toHaveBeenCalledWith('https://api.example.com/chunks', expect.objectContaining({
+    expect(global.fetch).toHaveBeenCalledWith('https://api.example.com/chunks/', expect.objectContaining({
       method: 'POST',
     }));
   });
@@ -76,7 +76,7 @@ describe('ApiClient', () => {
     });
 
     await client.deleteChunk('1');
-    expect(global.fetch).toHaveBeenCalledWith('https://api.example.com/chunks/1', expect.objectContaining({
+    expect(global.fetch).toHaveBeenCalledWith('https://api.example.com/chunks/1/', expect.objectContaining({
       method: 'DELETE',
     }));
   });

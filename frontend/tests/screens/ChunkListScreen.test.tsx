@@ -3,6 +3,9 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { ChunkListScreen } from '../../src/screens/ChunkListScreen';
 import { ApiClient } from '../../src/api/client';
 import { NavigationContainer } from '@react-navigation/native';
+import { Provider } from 'react-redux';
+import { setupStore } from '../../src/store';
+import { apiClient } from '../../src/store/chunksSlice';
 
 // Mock ApiClient
 jest.mock('../../src/api/client');
@@ -20,19 +23,22 @@ const MOCK_CHUNKS = [
 ];
 
 describe('ChunkListScreen', () => {
+  let testStore: any;
+
   beforeEach(() => {
-    (ApiClient as jest.Mock).mockImplementation(() => ({
-      getChunks: jest.fn().mockResolvedValue(MOCK_CHUNKS),
-      createChunk: jest.fn().mockResolvedValue({ ...MOCK_CHUNKS[0], chunk_id: '2', title: 'New Chunk' }),
-      deleteChunk: jest.fn().mockResolvedValue({}),
-    }));
+    testStore = setupStore();
+    jest.spyOn(apiClient, 'getChunks').mockResolvedValue(MOCK_CHUNKS);
+    jest.spyOn(apiClient, 'createChunk').mockResolvedValue({ ...MOCK_CHUNKS[0], chunk_id: '2', title: 'New Chunk' });
+    jest.spyOn(apiClient, 'deleteChunk').mockResolvedValue(undefined);
   });
 
   it('renders chunks from API', async () => {
     const { getByText } = render(
-      <NavigationContainer>
-        <ChunkListScreen navigation={{} as any} route={{} as any} />
-      </NavigationContainer>
+      <Provider store={testStore}>
+        <NavigationContainer>
+          <ChunkListScreen navigation={{} as any} route={{} as any} />
+        </NavigationContainer>
+      </Provider>
     );
 
     await waitFor(() => {
@@ -41,13 +47,15 @@ describe('ChunkListScreen', () => {
   });
 
   it('opens creation modal when FAB is pressed', async () => {
-    const { getByText } = render(
-      <NavigationContainer>
-        <ChunkListScreen navigation={{} as any} route={{} as any} />
-      </NavigationContainer>
+    const { getByText, getByTestId } = render(
+      <Provider store={testStore}>
+        <NavigationContainer>
+          <ChunkListScreen navigation={{} as any} route={{} as any} />
+        </NavigationContainer>
+      </Provider>
     );
 
-    fireEvent.press(getByText('+'));
-    expect(getByText('Create Schedule')).toBeTruthy();
+    fireEvent.press(getByTestId('thermal-fab'));
+    expect(getByText('NEW SCHEDULE')).toBeTruthy();
   });
 });

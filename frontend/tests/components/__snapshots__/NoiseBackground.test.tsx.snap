@@ -17,10 +17,169 @@ exports[`NoiseBackground renders correctly 1`] = `
   <View
     style={
       {
-        "backgroundColor": "#000",
+        "backgroundColor": "#04040A",
         "bottom": 0,
         "left": 0,
-        "opacity": 0.02,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+  />
+  <ViewManagerAdapter_ExpoLinearGradient
+    colors={
+      [
+        4278913808,
+        4278584842,
+        4278321669,
+      ]
+    }
+    locations={
+      [
+        0,
+        0.55,
+        1,
+      ]
+    }
+    style={
+      {
+        "bottom": 0,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "borderRadius": 750,
+        "height": 1000.5,
+        "left": -225,
+        "opacity": 0.9,
+        "overflow": "hidden",
+        "position": "absolute",
+        "top": -266.8,
+        "width": 825.0000000000001,
+      }
+    }
+  >
+    <ViewManagerAdapter_ExpoLinearGradient
+      colors={
+        [
+          689860316,
+          0,
+        ]
+      }
+      endPoint={
+        [
+          1,
+          1,
+        ]
+      }
+      startPoint={
+        [
+          0,
+          0,
+        ]
+      }
+      style={
+        {
+          "bottom": 0,
+          "left": 0,
+          "position": "absolute",
+          "right": 0,
+          "top": 0,
+        }
+      }
+    />
+  </View>
+  <View
+    style={
+      {
+        "borderRadius": 750,
+        "bottom": -200.1,
+        "height": 933.8,
+        "opacity": 0.85,
+        "overflow": "hidden",
+        "position": "absolute",
+        "right": -262.5,
+        "width": 825.0000000000001,
+      }
+    }
+  >
+    <ViewManagerAdapter_ExpoLinearGradient
+      colors={
+        [
+          452939560,
+          0,
+        ]
+      }
+      endPoint={
+        [
+          0,
+          0,
+        ]
+      }
+      startPoint={
+        [
+          1,
+          1,
+        ]
+      }
+      style={
+        {
+          "bottom": 0,
+          "left": 0,
+          "position": "absolute",
+          "right": 0,
+          "top": 0,
+        }
+      }
+    />
+  </View>
+  <ViewManagerAdapter_ExpoLinearGradient
+    colors={
+      [
+        1929379840,
+        0,
+      ]
+    }
+    style={
+      {
+        "height": 180,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+  />
+  <ViewManagerAdapter_ExpoLinearGradient
+    colors={
+      [
+        0,
+        2348810240,
+      ]
+    }
+    style={
+      {
+        "bottom": 0,
+        "height": 240,
+        "left": 0,
+        "position": "absolute",
+        "right": 0,
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "backgroundColor": "#FFFFFF",
+        "bottom": 0,
+        "left": 0,
+        "opacity": 0.012,
         "position": "absolute",
         "right": 0,
         "top": 0,

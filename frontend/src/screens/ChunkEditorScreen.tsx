@@ -13,19 +13,22 @@ import { RootStackParamList } from '../navigation/types';
 import { ChunkContainer } from '../components/ChunkContainer';
 import { EditTimesModal } from '../components/EditTimesModal';
 import { NoiseBackground } from '../components/NoiseBackground';
-import { ApiClient } from '../api/client';
 import { Task } from '../types';
 import { theme } from '../styles/theme';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { apiClient, updateChunkLocal } from '../store/chunksSlice';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChunkEditor'>;
 
 export const ChunkEditorScreen: React.FC<Props> = ({ route, navigation }) => {
-  const { chunk } = route.params;
+  const { chunkId } = route.params;
   const insets = useSafeAreaInsets();
+  const dispatch = useAppDispatch();
 
-  const [startTime, setStartTime] = useState(chunk.start_time);
-  const [endTime, setEndTime] = useState(chunk.end_time);
-  const [tasks, setTasks] = useState<Task[]>(chunk.tasks || []);
+  const chunk = useAppSelector((state) =>
+    state.chunks.chunks.find((c) => c.chunk_id === chunkId)
+  );
+
   const [editTimesVisible, setEditTimesVisible] = useState(false);
 
   const eyebrowScale = useSharedValue(1);
@@ -33,16 +36,25 @@ export const ChunkEditorScreen: React.FC<Props> = ({ route, navigation }) => {
     transform: [{ scale: eyebrowScale.value }],
   }));
 
-  const apiClient = useMemo(
-    () => new ApiClient('http://localhost:8080', chunk.user_id),
-    [chunk.user_id],
-  );
+  useEffect(() => {
+    if (!chunk) {
+      navigation.goBack();
+    }
+  }, [chunk, navigation]);
 
   useEffect(() => {
     return () => {
       apiClient.debouncedUpdateChunk.flush();
     };
-  }, [apiClient]);
+  }, []);
+
+  if (!chunk) {
+    return null;
+  }
+
+  const startTime = chunk.start_time;
+  const endTime = chunk.end_time;
+  const tasks = chunk.tasks || [];
 
   const totalDurationMinutes = useMemo(() => {
     try {
@@ -86,10 +98,9 @@ export const ChunkEditorScreen: React.FC<Props> = ({ route, navigation }) => {
   );
 
   const handleTimesCommit = (next: { start_time: string; end_time: string }) => {
-    setStartTime(next.start_time);
-    setEndTime(next.end_time);
-    setEditTimesVisible(false);
+    dispatch(updateChunkLocal({ chunkId: chunk.chunk_id, fields: next }));
     apiClient.debouncedUpdateChunk(chunk.chunk_id, next);
+    setEditTimesVisible(false);
   };
 
   return (
@@ -128,7 +139,9 @@ export const ChunkEditorScreen: React.FC<Props> = ({ route, navigation }) => {
         totalDurationMinutes={totalDurationMinutes}
         apiClient={apiClient}
         tasks={tasks}
-        onTasksChange={setTasks}
+        onTasksChange={(updatedTasks) => {
+          dispatch(updateChunkLocal({ chunkId: chunk.chunk_id, fields: { tasks: updatedTasks } }));
+        }}
       />
 
       <EditTimesModal

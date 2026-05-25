@@ -28,17 +28,18 @@ import { format, parseISO, addHours, startOfHour } from 'date-fns';
 
 import { RootStackParamList } from '../navigation/types';
 import { TimeChunk } from '../types';
-import { ApiClient } from '../api/client';
 import { theme } from '../styles/theme';
 import { NoiseBackground } from '../components/NoiseBackground';
 import { GlassSurface } from '../components/GlassSurface';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { fetchChunksThunk, createChunkThunk, deleteChunkThunk } from '../store/chunksSlice';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ChunkList'>;
 
 export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const [chunks, setChunks] = React.useState<TimeChunk[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const dispatch = useAppDispatch();
+  const { chunks, loading } = useAppSelector((state) => state.chunks);
   const [modalVisible, setModalVisible] = React.useState(false);
   const [newTitle, setNewTitle] = React.useState('');
   const [startTime] = React.useState(
@@ -48,25 +49,16 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
     format(addHours(startOfHour(new Date()), 2), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
   );
 
-  const apiClient = React.useMemo(
-    () => new ApiClient('http://localhost:8080', 'user_1'),
-    [],
-  );
-
   useEffect(() => {
     loadChunks();
   }, []);
 
   const loadChunks = async () => {
     try {
-      setLoading(true);
-      const data = await apiClient.getChunks();
-      setChunks(data);
+      await dispatch(fetchChunksThunk()).unwrap();
     } catch (error) {
       console.error('Failed to load chunks:', error);
       Alert.alert('Error', 'Failed to load your schedules.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -76,15 +68,16 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
       return;
     }
     try {
-      const newChunk = await apiClient.createChunk({
-        title: newTitle,
-        start_time: startTime,
-        end_time: endTime,
-      });
-      setChunks([...chunks, newChunk]);
+      const newChunk = await dispatch(
+        createChunkThunk({
+          title: newTitle,
+          start_time: startTime,
+          end_time: endTime,
+        })
+      ).unwrap();
       setModalVisible(false);
       setNewTitle('');
-      navigation.navigate('ChunkEditor', { chunk: newChunk });
+      navigation.navigate('ChunkEditor', { chunkId: newChunk.chunk_id });
     } catch (error) {
       Alert.alert('Error', 'Failed to create schedule');
     }
@@ -92,8 +85,7 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleDelete = async (chunkId: string) => {
     try {
-      await apiClient.deleteChunk(chunkId);
-      setChunks(chunks.filter((c) => c.chunk_id !== chunkId));
+      await dispatch(deleteChunkThunk(chunkId)).unwrap();
     } catch (error) {
       Alert.alert('Error', 'Failed to delete schedule');
     }
@@ -116,7 +108,7 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
     <Swipeable renderRightActions={() => renderRightActions(item.chunk_id)}>
       <ChunkCard
         chunk={item}
-        onPress={() => navigation.navigate('ChunkEditor', { chunk: item })}
+        onPress={() => navigation.navigate('ChunkEditor', { chunkId: item.chunk_id })}
       />
     </Swipeable>
   );
@@ -286,6 +278,7 @@ const ThermalFab: React.FC<{ bottom: number; onPress: () => void }> = ({
       </Animated.View>
 
       <Pressable
+        testID="thermal-fab"
         onPress={onPress}
         onPressIn={() => {
           press.value = withSpring(0.92, theme.physics.spring);

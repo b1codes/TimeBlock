@@ -45,3 +45,9 @@ jest.mock('react-native-safe-area-context', () => {
     SafeAreaContext: React.createContext(inset),
   };
 });
+
+jest.mock('expo-font', () => ({
+  useFonts: jest.fn(() => [true, null]),
+  loadAsync: jest.fn(),
+  isLoaded: jest.fn(() => true),
+}));

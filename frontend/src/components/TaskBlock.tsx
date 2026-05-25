@@ -20,6 +20,7 @@ interface Props extends Task {
 }
 
 export const TaskBlock: React.FC<Props> = ({
+  task_id,
   title,
   duration_minutes,
   isLimitReached,
@@ -97,7 +98,15 @@ export const TaskBlock: React.FC<Props> = ({
   }));
 
   return (
-    <Animated.View style={[styles.outer, { height }, animatedContainerStyle]}>
+    <Animated.View
+      testID={`task-block-${task_id}`}
+      style={[
+        styles.outer,
+        { height },
+        animatedContainerStyle,
+        isLimitReached && { borderColor: theme.colors.error, borderWidth: 1.5 }
+      ]}
+    >
       <Pressable
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}

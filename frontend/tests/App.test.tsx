@@ -2,6 +2,15 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import App from '../App';
 
+jest.mock('../src/api/client', () => {
+  return {
+    ApiClient: jest.fn().mockImplementation(() => ({
+      getChunks: jest.fn().mockResolvedValue([]),
+      debouncedUpdateChunk: { flush: jest.fn() },
+    })),
+  };
+});
+
 describe('App', () => {
   it('renders the NoiseBackground component', () => {
     const { getByTestId, queryByTestId } = render(<App />);
