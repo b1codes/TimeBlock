@@ -53,6 +53,7 @@ def test_update_chunk_tasks(client, timechunk_table):
     payload = {
         "tasks": [
             {
+                "task_id": "t1",
                 "title": "Read",
                 "duration_minutes": 20,
                 "min_duration": 10
@@ -69,6 +70,7 @@ def test_update_missing_chunk(client, timechunk_table):
     payload = {
         "tasks": [
             {
+                "task_id": "t1",
                 "title": "Read",
                 "duration_minutes": 20,
                 "min_duration": 10

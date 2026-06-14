@@ -1,11 +1,13 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import chunksReducer from './chunksSlice';
+
+const rootReducer = combineReducers({
+  chunks: chunksReducer,
+});
 
 export const setupStore = (preloadedState?: any) => {
   return configureStore({
-    reducer: {
-      chunks: chunksReducer,
-    },
+    reducer: rootReducer,
     preloadedState,
   });
 };

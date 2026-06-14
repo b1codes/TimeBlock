@@ -22,7 +22,7 @@ const MOCK_CHUNKS: TimeChunk[] = [
 
 describe('chunksSlice', () => {
   it('should return the initial state', () => {
-    expect(chunksReducer(undefined, { type: undefined })).toEqual({
+    expect(chunksReducer(undefined, { type: '@@INIT' })).toEqual({
       chunks: [],
       loading: false,
       error: null,

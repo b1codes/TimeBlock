@@ -1,0 +1,57 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    
+    # Ensure only one deployment runs at a time
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Package Backend
+        run: |
+          mkdir -p backend/build
+          # Install dependencies to build directory
+          pip install -r backend/requirements.txt -t backend/build
+          # Copy src files
+          cp -r backend/src backend/build/src
+          # Create zip archive from build directory
+          cd backend/build
+          zip -r ../../backend.zip .
+          cd ../..
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+
+      - name: Deploy Infrastructure
+        run: |
+          cd infra
+          terraform init
+          terraform apply -auto-approve
+          
+      - name: Deploy Backend Lambda Code
+        run: |
+          aws lambda update-function-code --function-name timeblock-api-backend --zip-file fileb://backend.zip

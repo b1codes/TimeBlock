@@ -4,7 +4,7 @@
 data "archive_file" "dummy_lambda" {
   type        = "zip"
   output_path = "${path.module}/dummy_payload.zip"
-  
+
   source {
     content  = "def handler(event, context): pass"
     filename = "main.py"

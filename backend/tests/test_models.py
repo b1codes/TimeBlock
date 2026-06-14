@@ -2,7 +2,7 @@ from src.models import Task, TimeChunkCreate, TimeChunkResponse
 from datetime import datetime
 
 def test_task_model():
-    task = Task(title="Morning Run", duration_minutes=30, min_duration=10)
+    task = Task(task_id="t1", title="Morning Run", duration_minutes=30, min_duration=10)
     assert task.title == "Morning Run"
     assert task.task_id is not None
 
