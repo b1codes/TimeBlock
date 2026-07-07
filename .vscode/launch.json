@@ -1,0 +1,124 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend: FastAPI",
+      "type": "python",
+      "request": "launch",
+      "module": "uvicorn",
+      "cwd": "${workspaceFolder}/backend",
+      "args": [
+        "src.main:app",
+        "--reload",
+        "--port",
+        "8080"
+      ],
+      "env": {
+        "DYNAMODB_ENDPOINT_URL": "http://localhost:8000",
+        "AWS_ACCESS_KEY_ID": "local",
+        "AWS_SECRET_ACCESS_KEY": "local",
+        "AWS_DEFAULT_REGION": "us-east-1"
+      },
+      "python": "${workspaceFolder}/backend/.venv/bin/python3",
+      "preLaunchTask": "DynamoDB: Start and Initialize",
+      "jinja": true
+    },
+    {
+      "name": "Backend: Pytest Tests",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "cwd": "${workspaceFolder}/backend",
+      "args": [
+        "tests"
+      ],
+      "env": {
+        "DYNAMODB_ENDPOINT_URL": "http://localhost:8000",
+        "AWS_ACCESS_KEY_ID": "local",
+        "AWS_SECRET_ACCESS_KEY": "local",
+        "AWS_DEFAULT_REGION": "us-east-1"
+      },
+      "python": "${workspaceFolder}/backend/.venv/bin/python3",
+      "preLaunchTask": "DynamoDB: Start and Initialize"
+    },
+    {
+      "name": "Frontend: Start Expo Dev Server",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/frontend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "start"
+      ],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Frontend: Start iOS Simulator",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/frontend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "ios"
+      ],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Frontend: Start Web App",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/frontend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "web"
+      ],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Frontend: Attach Expo Debugger",
+      "type": "expo",
+      "request": "attach",
+      "projectRoot": "${workspaceFolder}/frontend",
+      "bundlerPort": 8081,
+      "bundlerHost": "127.0.0.1"
+    },
+    {
+      "name": "Frontend: Debug Jest Tests",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/frontend",
+      "program": "${workspaceFolder}/frontend/node_modules/jest/bin/jest.js",
+      "args": [
+        "--runInBand"
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack: FastAPI & iOS Simulator",
+      "configurations": [
+        "Backend: FastAPI",
+        "Frontend: Start iOS Simulator"
+      ],
+      "stopAll": true
+    },
+    {
+      "name": "Full Stack: FastAPI & Web",
+      "configurations": [
+        "Backend: FastAPI",
+        "Frontend: Start Web App"
+      ],
+      "stopAll": true
+    },
+    {
+      "name": "Full Stack: FastAPI & Expo",
+      "configurations": [
+        "Backend: FastAPI",
+        "Frontend: Start Expo Dev Server"
+      ],
+      "stopAll": true
+    }
+  ]
+}
