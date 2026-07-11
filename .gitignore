@@ -166,7 +166,7 @@ docker/
 .worktrees/
 
 # Agent
-.agent/
+.agents/
 agent.md
 
 # b1CodingTool Generated
