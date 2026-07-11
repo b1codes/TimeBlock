@@ -6,6 +6,8 @@ import {
   Text,
   TextInput,
   View,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -87,14 +89,19 @@ export const EditTimesModal: React.FC<Props> = ({
         <View style={styles.dim} />
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View style={styles.center} pointerEvents="box-none">
-          <GlassSurface
-            radius={theme.layout.radius.xl}
-            intensity={40}
-            tone="raised"
-            borderTone="strong"
-            style={styles.sheet}
-          >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.keyboardAvoiding}
+          pointerEvents="box-none"
+        >
+          <View style={styles.center} pointerEvents="box-none">
+            <GlassSurface
+              radius={theme.layout.radius.xl}
+              intensity={40}
+              tone="raised"
+              borderTone="strong"
+              style={styles.sheet}
+            >
             <Text style={styles.eyebrow}>ADJUST ENVELOPE</Text>
             <Text style={styles.title}>Re-time the schedule</Text>
 
@@ -148,8 +155,9 @@ export const EditTimesModal: React.FC<Props> = ({
                 </LinearGradient>
               </Pressable>
             </View>
-          </GlassSurface>
-        </View>
+            </GlassSurface>
+          </View>
+        </KeyboardAvoidingView>
       </BlurView>
     </Modal>
   );
@@ -159,6 +167,10 @@ const styles = StyleSheet.create({
   dim: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  keyboardAvoiding: {
+    flex: 1,
+    justifyContent: 'center',
   },
   center: {
     flex: 1,

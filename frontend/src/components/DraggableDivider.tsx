@@ -50,6 +50,7 @@ export const DraggableDivider: React.FC<Props> = ({
 
   const panGesture = Gesture.Pan()
     .activeOffsetY([-4, 4])
+    .hitSlop({ top: 14, bottom: 14 })
     .onStart(() => {
       lastEmittedY.value = 0;
       isDragging.value = withTiming(1, { duration: 90, easing: theme.physics.quartOut });
@@ -70,6 +71,7 @@ export const DraggableDivider: React.FC<Props> = ({
 
   const tapGesture = Gesture.Tap()
     .maxDuration(250)
+    .hitSlop({ top: 14, bottom: 14 })
     .onEnd((_e, success) => {
       if (success && onPress) runOnJS(onPress)();
     });
@@ -98,12 +100,25 @@ export const DraggableDivider: React.FC<Props> = ({
 
   // Buffer is only meaningful for between-variant dividers.
   const isBuffer = !isTerminal && bufferDuration > 0;
-  const height = isBuffer ? bufferDuration * theme.layout.minutesToHeight : 16;
+  const height = isBuffer ? bufferDuration * theme.layout.minutesToHeight : theme.spacing.m;
   const haloColors = isTerminal ? TERMINAL_HALO_COLORS : BETWEEN_HALO_COLORS;
 
   return (
     <GestureDetector gesture={composed}>
-      <View style={[styles.wrapper, { height }]}>
+      <View
+        style={[styles.wrapper, { height }]}
+        accessibilityRole="none"
+        accessibilityLabel={
+          isTerminal
+            ? "Terminal adjustment boundary"
+            : `Time adjustment boundary. Buffer size: ${bufferDuration} minutes.`
+        }
+        accessibilityHint={
+          isTerminal
+            ? "Adjust end of chunk schedule"
+            : "Double tap to toggle task buffer"
+        }
+      >
         {isBuffer && (
           <>
             <View style={styles.bufferFill} />
@@ -173,7 +188,7 @@ const styles = StyleSheet.create({
   track: {
     position: 'absolute',
     top: '50%',
-    height: 1,
+    height: theme.layout.hairline,
     backgroundColor: theme.colors.glass.border,
   },
   trackLeft: { left: 0, right: '55%' },

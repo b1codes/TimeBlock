@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, AccessibilityInfo } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -20,17 +20,52 @@ interface Props {
 export const BalanceHeader: React.FC<Props> = ({ unassignedMinutes }) => {
   const insets = useSafeAreaInsets();
   const breath = useSharedValue(0.6);
+  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
 
   useEffect(() => {
-    breath.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 1800, easing: Easing.bezier(0.23, 1, 0.32, 1) }),
-        withTiming(0.55, { duration: 1800, easing: Easing.bezier(0.23, 1, 0.32, 1) }),
-      ),
-      -1,
-      false,
-    );
-  }, [breath]);
+    // Check initial state
+    if (AccessibilityInfo.isReduceMotionEnabled) {
+      const promise = AccessibilityInfo.isReduceMotionEnabled();
+      if (promise && typeof promise.then === 'function') {
+        promise.then((enabled) => {
+          setReduceMotionEnabled(enabled);
+        }).catch(() => {});
+      }
+    }
+
+    // Listen for changes
+    let subscription: any;
+    if (AccessibilityInfo.addEventListener) {
+      subscription = AccessibilityInfo.addEventListener(
+        'reduceMotionChanged',
+        (enabled) => {
+          setReduceMotionEnabled(enabled);
+        }
+      );
+    }
+
+    return () => {
+      if (subscription) {
+        subscription.remove();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotionEnabled) {
+      // Per DESIGN.md: static at full opacity
+      breath.value = 1.0;
+    } else {
+      breath.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 1800, easing: Easing.bezier(0.23, 1, 0.32, 1) }),
+          withTiming(0.55, { duration: 1800, easing: Easing.bezier(0.23, 1, 0.32, 1) }),
+        ),
+        -1,
+        false,
+      );
+    }
+  }, [breath, reduceMotionEnabled]);
 
   const hairlineStyle = useAnimatedStyle(() => ({
     opacity: breath.value,

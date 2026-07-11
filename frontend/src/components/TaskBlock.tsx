@@ -42,7 +42,8 @@ export const TaskBlock: React.FC<Props> = ({
   // Limit warning pulse — short, decisive
   const limitPulse = useSharedValue(0);
 
-  const height = Math.max(duration_minutes * theme.layout.minutesToHeight, 36);
+  // Minimum height set to 44 pt to comply with iOS HIG minimum touch targets
+  const height = Math.max(duration_minutes * theme.layout.minutesToHeight, 44);
 
   useEffect(() => {
     if (isLimitReached) {
@@ -112,6 +113,9 @@ export const TaskBlock: React.FC<Props> = ({
         onPressOut={handlePressOut}
         onLongPress={() => setIsEditing(true)}
         style={styles.pressable}
+        accessibilityRole="button"
+        accessibilityLabel={`${title}, duration ${duration_minutes} minutes.`}
+        accessibilityHint="Double tap and hold to rename task."
       >
         <GlassSurface
           radius={theme.layout.radius.m}
@@ -163,6 +167,8 @@ export const TaskBlock: React.FC<Props> = ({
                 autoFocus
                 selectTextOnFocus
                 placeholderTextColor="rgba(255,255,255,0.3)"
+                accessibilityLabel="Task title edit field"
+                accessibilityHint="Enter the new name for the task and press submit to save."
               />
             ) : (
               <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
@@ -214,7 +220,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   input: {
-    borderBottomWidth: 1,
+    borderBottomWidth: theme.layout.hairline,
     borderBottomColor: theme.colors.thermal.core,
     paddingVertical: 2,
     minWidth: 140,
@@ -222,7 +228,7 @@ const styles = StyleSheet.create({
   durationRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginTop: 4,
+    marginTop: theme.spacing.xs,
   },
   duration: {
     fontFamily: theme.typography.h2.fontFamily,

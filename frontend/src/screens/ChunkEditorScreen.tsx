@@ -107,7 +107,7 @@ export const ChunkEditorScreen: React.FC<Props> = ({ route, navigation }) => {
     <View style={styles.container}>
       <NoiseBackground />
 
-      <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.topBar, { paddingTop: insets.top + theme.spacing.s }]}>
         <BackButton onPress={() => navigation.goBack()} />
         <View style={styles.titleBlock}>
           <Animated.View style={eyebrowAnimStyle}>
@@ -121,6 +121,9 @@ export const ChunkEditorScreen: React.FC<Props> = ({ route, navigation }) => {
               }}
               hitSlop={{ top: 16, bottom: 16, left: 8, right: 8 }}
               disabled={!startLabel || !endLabel}
+              accessibilityRole="button"
+              accessibilityLabel={`Schedule time envelope: ${startLabel} to ${endLabel}`}
+              accessibilityHint="Double tap to adjust start and end times"
             >
               <Text style={styles.eyebrow} numberOfLines={1}>
                 {startLabel && endLabel ? `${startLabel} — ${endLabel}` : 'SCHEDULE'}
@@ -174,6 +177,9 @@ const BackButton: React.FC<{ onPress: () => void }> = ({ onPress }) => {
         }}
         hitSlop={12}
         style={styles.backPressable}
+        accessibilityRole="button"
+        accessibilityLabel="Back"
+        accessibilityHint="Returns to the schedules list screen"
       >
         <View style={styles.chevron} />
       </Pressable>
@@ -187,7 +193,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: theme.spacing.m,
-    paddingBottom: 8,
+    paddingBottom: theme.spacing.s,
   },
   backOuter: {
     width: 40,
@@ -201,7 +207,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: theme.layout.hairline,
     borderColor: theme.colors.glass.border,
     backgroundColor: 'rgba(255,255,255,0.04)',
   },

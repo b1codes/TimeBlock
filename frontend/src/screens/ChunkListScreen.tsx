@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -8,6 +8,9 @@ import {
   Alert,
   Modal,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  AccessibilityInfo,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -95,6 +98,8 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
     <Pressable
       style={styles.deleteAction}
       onPress={() => handleDelete(chunkId)}
+      accessibilityRole="button"
+      accessibilityLabel="Jettison schedule"
     >
       <LinearGradient
         colors={['rgba(255, 59, 48, 0.85)', 'rgba(255, 59, 48, 0.65)']}
@@ -105,19 +110,28 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
   );
 
   const renderItem = ({ item }: { item: TimeChunk }) => (
-    <Swipeable renderRightActions={() => renderRightActions(item.chunk_id)}>
-      <ChunkCard
-        chunk={item}
-        onPress={() => navigation.navigate('ChunkEditor', { chunkId: item.chunk_id })}
-      />
-    </Swipeable>
+    <View
+      accessibilityActions={[{ name: 'delete', label: 'Jettison schedule' }]}
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === 'delete') {
+          handleDelete(item.chunk_id);
+        }
+      }}
+    >
+      <Swipeable renderRightActions={() => renderRightActions(item.chunk_id)}>
+        <ChunkCard
+          chunk={item}
+          onPress={() => navigation.navigate('ChunkEditor', { chunkId: item.chunk_id })}
+        />
+      </Swipeable>
+    </View>
   );
 
   return (
     <View style={styles.container}>
       <NoiseBackground />
 
-      <View style={[styles.header, { paddingTop: insets.top + 24 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + theme.spacing.l }]}>
         <View style={styles.headerRow}>
           <View style={styles.brandDot} />
           <Text style={styles.eyebrow}>TIMEBLOCK · INSTRUMENTATION</Text>
@@ -149,7 +163,7 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
       />
 
       <ThermalFab
-        bottom={insets.bottom + 24}
+        bottom={insets.bottom + theme.spacing.l}
         onPress={() => setModalVisible(true)}
       />
 
@@ -197,6 +211,9 @@ const ChunkCard: React.FC<{ chunk: TimeChunk; onPress: () => void }> = ({
             easing: theme.physics.quartOut,
           });
         }}
+        accessibilityRole="button"
+        accessibilityLabel={`${chunk.title}, scheduled from ${format(start, 'EEE MMM d, HH:mm')} to ${format(end, 'HH:mm')}. Contains ${chunk.tasks.length} ${chunk.tasks.length === 1 ? 'task' : 'tasks'}.`}
+        accessibilityHint="Double tap to open editor"
       >
         <GlassSurface radius={theme.layout.radius.l} intensity={22}>
           {/* Thermal press wash */}
@@ -249,16 +266,51 @@ const ThermalFab: React.FC<{ bottom: number; onPress: () => void }> = ({
   const press = useSharedValue(1);
   const breath = useSharedValue(0.5);
 
+  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
+
   useEffect(() => {
-    breath.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 2200, easing: Easing.bezier(0.23, 1, 0.32, 1) }),
-        withTiming(0.45, { duration: 2200, easing: Easing.bezier(0.23, 1, 0.32, 1) }),
-      ),
-      -1,
-      false,
-    );
-  }, [breath]);
+    // Check initial state
+    if (AccessibilityInfo.isReduceMotionEnabled) {
+      const promise = AccessibilityInfo.isReduceMotionEnabled();
+      if (promise && typeof promise.then === 'function') {
+        promise.then((enabled) => {
+          setReduceMotionEnabled(enabled);
+        }).catch(() => {});
+      }
+    }
+
+    // Listen for changes
+    let subscription: any;
+    if (AccessibilityInfo.addEventListener) {
+      subscription = AccessibilityInfo.addEventListener(
+        'reduceMotionChanged',
+        (enabled) => {
+          setReduceMotionEnabled(enabled);
+        }
+      );
+    }
+
+    return () => {
+      if (subscription) {
+        subscription.remove();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotionEnabled) {
+      breath.value = 0.7; // Static full glow
+    } else {
+      breath.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 2200, easing: Easing.bezier(0.23, 1, 0.32, 1) }),
+          withTiming(0.45, { duration: 2200, easing: Easing.bezier(0.23, 1, 0.32, 1) }),
+        ),
+        -1,
+        false,
+      );
+    }
+  }, [breath, reduceMotionEnabled]);
 
   const animatedScale = useAnimatedStyle(() => ({
     transform: [{ scale: press.value }],
@@ -287,6 +339,9 @@ const ThermalFab: React.FC<{ bottom: number; onPress: () => void }> = ({
           press.value = withSpring(1, theme.physics.spring);
         }}
         style={styles.fabPressable}
+        accessibilityRole="button"
+        accessibilityLabel="Create new schedule"
+        accessibilityHint="Initializes a new chronos timeblock"
       >
         <LinearGradient
           colors={theme.colors.thermal.glow}
@@ -340,14 +395,19 @@ const CreateScheduleModal: React.FC<ScheduleModalProps> = ({
       <View style={styles.modalDim} />
       <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-      <View style={styles.modalCenter} pointerEvents="box-none">
-        <GlassSurface
-          radius={theme.layout.radius.xl}
-          intensity={42}
-          tone="raised"
-          borderTone="strong"
-          style={styles.modalSheet}
-        >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboardAvoiding}
+        pointerEvents="box-none"
+      >
+        <View style={styles.modalCenter} pointerEvents="box-none">
+          <GlassSurface
+            radius={theme.layout.radius.xl}
+            intensity={42}
+            tone="raised"
+            borderTone="strong"
+            style={styles.modalSheet}
+          >
           <Text style={styles.modalEyebrow}>NEW SCHEDULE</Text>
           <Text style={styles.modalTitle}>Initialize a chronos block</Text>
 
@@ -378,8 +438,9 @@ const CreateScheduleModal: React.FC<ScheduleModalProps> = ({
               </LinearGradient>
             </Pressable>
           </View>
-        </GlassSurface>
-      </View>
+          </GlassSurface>
+        </View>
+      </KeyboardAvoidingView>
     </BlurView>
   </Modal>
 );
@@ -395,8 +456,8 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
+    gap: theme.spacing.s,
+    marginBottom: theme.spacing.s,
   },
   brandDot: {
     width: 6,
@@ -423,7 +484,7 @@ const styles = StyleSheet.create({
   },
   headerRule: {
     marginTop: theme.spacing.m,
-    height: 1,
+    height: theme.layout.hairline,
     width: 64,
     backgroundColor: theme.colors.thermal.core,
     opacity: 0.85,
@@ -474,7 +535,7 @@ const styles = StyleSheet.create({
   },
   cardTimeRule: {
     width: 16,
-    height: 1,
+    height: theme.layout.hairline,
     backgroundColor: theme.colors.glass.border,
   },
   cardRight: { alignItems: 'flex-end' },
@@ -534,7 +595,7 @@ const styles = StyleSheet.create({
   // --- FAB ---
   fab: {
     position: 'absolute',
-    right: 24,
+    right: theme.spacing.l,
     width: 64,
     height: 64,
   },
@@ -584,6 +645,10 @@ const styles = StyleSheet.create({
   modalDim: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  keyboardAvoiding: {
+    flex: 1,
+    justifyContent: 'center',
   },
   modalCenter: {
     flex: 1,

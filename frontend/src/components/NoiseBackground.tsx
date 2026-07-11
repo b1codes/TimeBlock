@@ -1,9 +1,7 @@
 import React from 'react';
-import { StyleSheet, View, Dimensions } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../styles/theme';
-
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 /**
  * Atmospheric backdrop for LLC Technical Luxury.
@@ -17,6 +15,24 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
  * it to refract.
  */
 export const NoiseBackground: React.FC = () => {
+  const { width, height } = useWindowDimensions();
+
+  const coolBleedStyle = {
+    top: -height * 0.2,
+    left: -width * 0.3,
+    width: width * 1.1,
+    height: height * 0.75,
+    borderRadius: width,
+  };
+
+  const warmBleedStyle = {
+    bottom: -height * 0.15,
+    right: -width * 0.35,
+    width: width * 1.1,
+    height: height * 0.7,
+    borderRadius: width,
+  };
+
   return (
     <View testID="noise-background" pointerEvents="none" style={StyleSheet.absoluteFill}>
       {/* Deep base — slight blue-violet tilt, never pure black */}
@@ -24,13 +40,13 @@ export const NoiseBackground: React.FC = () => {
 
       {/* Vertical atmospheric gradient — slightly lighter at top */}
       <LinearGradient
-        colors={['#0B0B10', '#06060A', '#020205']}
-        locations={[0, 0.55, 1]}
-        style={StyleSheet.absoluteFill}
+          colors={['#0B0B10', '#06060A', '#020205']}
+          locations={[0, 0.55, 1]}
+          style={StyleSheet.absoluteFill}
       />
 
       {/* Cool primary bleed — upper-left ambient */}
-      <View style={styles.coolBleed}>
+      <View style={[styles.coolBleed, coolBleedStyle]}>
         <LinearGradient
           colors={[theme.colors.cool.bleedStrong, 'transparent']}
           start={{ x: 0, y: 0 }}
@@ -40,7 +56,7 @@ export const NoiseBackground: React.FC = () => {
       </View>
 
       {/* Warm thermal bleed — lower-right machine heat signature */}
-      <View style={styles.warmBleed}>
+      <View style={[styles.warmBleed, warmBleedStyle]}>
         <LinearGradient
           colors={[theme.colors.thermal.bleed, 'transparent']}
           start={{ x: 1, y: 1 }}
@@ -74,21 +90,11 @@ const styles = StyleSheet.create({
   },
   coolBleed: {
     position: 'absolute',
-    top: -SCREEN_H * 0.2,
-    left: -SCREEN_W * 0.3,
-    width: SCREEN_W * 1.1,
-    height: SCREEN_H * 0.75,
-    borderRadius: SCREEN_W,
     overflow: 'hidden',
     opacity: 0.9,
   },
   warmBleed: {
     position: 'absolute',
-    bottom: -SCREEN_H * 0.15,
-    right: -SCREEN_W * 0.35,
-    width: SCREEN_W * 1.1,
-    height: SCREEN_H * 0.7,
-    borderRadius: SCREEN_W,
     overflow: 'hidden',
     opacity: 0.85,
   },

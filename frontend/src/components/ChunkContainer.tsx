@@ -8,6 +8,8 @@ import {
   Modal,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -323,14 +325,19 @@ const CreateTaskModal: React.FC<ModalProps> = ({
         <View style={styles.modalDim} />
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View style={styles.modalCenter} pointerEvents="box-none">
-          <GlassSurface
-            radius={theme.layout.radius.xl}
-            intensity={40}
-            tone="raised"
-            borderTone="strong"
-            style={styles.modalSheet}
-          >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.keyboardAvoiding}
+          pointerEvents="box-none"
+        >
+          <View style={styles.modalCenter} pointerEvents="box-none">
+            <GlassSurface
+              radius={theme.layout.radius.xl}
+              intensity={40}
+              tone="raised"
+              borderTone="strong"
+              style={styles.modalSheet}
+            >
             <Text style={styles.modalEyebrow}>NEW INSTRUMENT</Text>
             <Text style={styles.modalTitle}>Designate the task</Text>
 
@@ -374,8 +381,9 @@ const CreateTaskModal: React.FC<ModalProps> = ({
                 </LinearGradient>
               </Pressable>
             </View>
-          </GlassSurface>
-        </View>
+            </GlassSurface>
+          </View>
+        </KeyboardAvoidingView>
       </BlurView>
     </Modal>
   );
@@ -408,7 +416,7 @@ const styles = StyleSheet.create({
   slotRing: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: theme.layout.radius.m,
-    borderWidth: 1,
+    borderWidth: theme.layout.hairline,
     borderColor: theme.colors.glass.border,
     borderStyle: 'dashed',
   },
@@ -416,7 +424,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
+    gap: theme.spacing.s,
   },
   slotCross: {
     width: 18,
@@ -428,14 +436,14 @@ const styles = StyleSheet.create({
   },
   slotCrossV: {
     position: 'absolute',
-    width: 1,
-    height: 14,
+    width: 1.5,
+    height: 18,
     backgroundColor: theme.colors.thermal.corona,
   },
   slotCrossH: {
     position: 'absolute',
-    width: 14,
-    height: 1,
+    width: 18,
+    height: 1.5,
     backgroundColor: theme.colors.thermal.corona,
   },
   slotLabel: {
@@ -455,6 +463,10 @@ const styles = StyleSheet.create({
   modalDim: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  keyboardAvoiding: {
+    flex: 1,
+    justifyContent: 'center',
   },
   modalCenter: {
     flex: 1,
@@ -491,10 +503,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.04)',
     borderRadius: theme.layout.radius.s,
-    borderWidth: 1,
+    borderWidth: theme.layout.hairline,
     borderColor: theme.colors.glass.border,
     paddingHorizontal: theme.spacing.m,
-    marginBottom: theme.spacing.m,
+    marginBottom: theme.spacing.l,
   },
   input: {
     flex: 1,

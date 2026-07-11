@@ -53,16 +53,20 @@ exports[`NoiseBackground renders correctly 1`] = `
   />
   <View
     style={
-      {
-        "borderRadius": 750,
-        "height": 1000.5,
-        "left": -225,
-        "opacity": 0.9,
-        "overflow": "hidden",
-        "position": "absolute",
-        "top": -266.8,
-        "width": 825.0000000000001,
-      }
+      [
+        {
+          "opacity": 0.9,
+          "overflow": "hidden",
+          "position": "absolute",
+        },
+        {
+          "borderRadius": 750,
+          "height": 1000.5,
+          "left": -225,
+          "top": -266.8,
+          "width": 825.0000000000001,
+        },
+      ]
     }
   >
     <ViewManagerAdapter_ExpoLinearGradient
@@ -97,16 +101,20 @@ exports[`NoiseBackground renders correctly 1`] = `
   </View>
   <View
     style={
-      {
-        "borderRadius": 750,
-        "bottom": -200.1,
-        "height": 933.8,
-        "opacity": 0.85,
-        "overflow": "hidden",
-        "position": "absolute",
-        "right": -262.5,
-        "width": 825.0000000000001,
-      }
+      [
+        {
+          "opacity": 0.85,
+          "overflow": "hidden",
+          "position": "absolute",
+        },
+        {
+          "borderRadius": 750,
+          "bottom": -200.1,
+          "height": 933.8,
+          "right": -262.5,
+          "width": 825.0000000000001,
+        },
+      ]
     }
   >
     <ViewManagerAdapter_ExpoLinearGradient
