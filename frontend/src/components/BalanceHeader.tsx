@@ -84,11 +84,11 @@ export const BalanceHeader: React.FC<Props> = ({ unassignedMinutes }) => {
       <View
         style={[styles.container, { paddingTop: insets.top + 12 }]}
         accessibilityRole="header"
-        accessibilityLabel={`Unassigned atmosphere: ${unassignedMinutes} minutes`}
+        accessibilityLabel={`Unassigned time: ${unassignedMinutes} minutes`}
       >
         <View style={styles.row}>
           <View style={styles.statusDot} />
-          <Text style={styles.eyebrow}>UNASSIGNED ATMOSPHERE</Text>
+          <Text style={styles.eyebrow}>UNASSIGNED TIME</Text>
         </View>
 
         <View style={styles.readout}>

@@ -122,7 +122,7 @@ export const ChunkEditorScreen: React.FC<Props> = ({ route, navigation }) => {
               hitSlop={{ top: 16, bottom: 16, left: 8, right: 8 }}
               disabled={!startLabel || !endLabel}
               accessibilityRole="button"
-              accessibilityLabel={`Schedule time envelope: ${startLabel} to ${endLabel}`}
+              accessibilityLabel={`Schedule times: ${startLabel} to ${endLabel}`}
               accessibilityHint="Double tap to adjust start and end times"
             >
               <Text style={styles.eyebrow} numberOfLines={1}>

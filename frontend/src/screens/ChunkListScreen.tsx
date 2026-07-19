@@ -99,19 +99,19 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
       style={styles.deleteAction}
       onPress={() => handleDelete(chunkId)}
       accessibilityRole="button"
-      accessibilityLabel="Jettison schedule"
+      accessibilityLabel="Delete schedule"
     >
       <LinearGradient
         colors={['rgba(255, 59, 48, 0.85)', 'rgba(255, 59, 48, 0.65)']}
         style={StyleSheet.absoluteFill}
       />
-      <Text style={styles.deleteActionText}>JETTISON</Text>
+      <Text style={styles.deleteActionText}>DELETE</Text>
     </Pressable>
   );
 
   const renderItem = ({ item }: { item: TimeChunk }) => (
     <View
-      accessibilityActions={[{ name: 'delete', label: 'Jettison schedule' }]}
+      accessibilityActions={[{ name: 'delete', label: 'Delete schedule' }]}
       onAccessibilityAction={(event) => {
         if (event.nativeEvent.actionName === 'delete') {
           handleDelete(item.chunk_id);
@@ -134,9 +134,9 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
       <View style={[styles.header, { paddingTop: insets.top + theme.spacing.l }]}>
         <View style={styles.headerRow}>
           <View style={styles.brandDot} />
-          <Text style={styles.eyebrow}>TIMEBLOCK · INSTRUMENTATION</Text>
+          <Text style={styles.eyebrow}>TIMEBLOCK · PLANNING</Text>
         </View>
-        <Text style={styles.headerTitle}>CHRONOS</Text>
+        <Text style={styles.headerTitle}>TIMEBLOCK</Text>
         <View style={styles.headerRule} />
       </View>
 
@@ -155,7 +155,7 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>NO ACTIVE SCHEDULES</Text>
               <Text style={styles.emptySub}>
-                Initialize a schedule to begin instrumentation.
+                Create a schedule to start planning.
               </Text>
             </View>
           ) : null
@@ -247,7 +247,7 @@ const ChunkCard: React.FC<{ chunk: TimeChunk; onPress: () => void }> = ({
             <View style={styles.cardRight}>
               <Text style={styles.cardMetric}>{chunk.tasks.length}</Text>
               <Text style={styles.cardMetricLabel}>
-                {chunk.tasks.length === 1 ? 'INSTRUMENT' : 'INSTRUMENTS'}
+                {chunk.tasks.length === 1 ? 'TASK' : 'TASKS'}
               </Text>
             </View>
           </View>
@@ -341,7 +341,7 @@ const ThermalFab: React.FC<{ bottom: number; onPress: () => void }> = ({
         style={styles.fabPressable}
         accessibilityRole="button"
         accessibilityLabel="Create new schedule"
-        accessibilityHint="Initializes a new chronos timeblock"
+        accessibilityHint="Creates a new daily timeblock"
       >
         <LinearGradient
           colors={theme.colors.thermal.glow}
@@ -409,9 +409,9 @@ const CreateScheduleModal: React.FC<ScheduleModalProps> = ({
             style={styles.modalSheet}
           >
           <Text style={styles.modalEyebrow}>NEW SCHEDULE</Text>
-          <Text style={styles.modalTitle}>Initialize a chronos block</Text>
+          <Text style={styles.modalTitle}>Create a new schedule</Text>
 
-          <Text style={styles.fieldLabel}>SYSTEM DESIGNATION</Text>
+          <Text style={styles.fieldLabel}>SCHEDULE NAME</Text>
           <View style={styles.fieldWrap}>
             <TextInput
               style={styles.input}
@@ -425,7 +425,7 @@ const CreateScheduleModal: React.FC<ScheduleModalProps> = ({
 
           <View style={styles.modalButtons}>
             <Pressable style={styles.cancelBtn} onPress={onClose}>
-              <Text style={styles.cancelBtnText}>ABORT</Text>
+              <Text style={styles.cancelBtnText}>CANCEL</Text>
             </Pressable>
             <Pressable style={styles.createBtnOuter} onPress={onSubmit}>
               <LinearGradient
@@ -434,7 +434,7 @@ const CreateScheduleModal: React.FC<ScheduleModalProps> = ({
                 end={{ x: 1, y: 1 }}
                 style={styles.createBtn}
               >
-                <Text style={styles.createBtnText}>INITIALIZE</Text>
+                <Text style={styles.createBtnText}>CREATE</Text>
               </LinearGradient>
             </Pressable>
           </View>

@@ -55,7 +55,7 @@ export const EditTimesModal: React.FC<Props> = ({
     const endParts = parseHHmm(endInput);
 
     if (!startParts || !endParts) {
-      setError('INVALID TIME FORMAT — USE HH:MM');
+      setError('Invalid time format. Use HH:MM');
       return;
     }
 
@@ -65,12 +65,12 @@ export const EditTimesModal: React.FC<Props> = ({
     const newTotal = differenceInMinutes(parseISO(nextEndISO), parseISO(nextStartISO));
 
     if (newTotal <= 0) {
-      setError('END MUST BE AFTER START');
+      setError('End time must be after start time');
       return;
     }
 
     if (newTotal < currentTotalMinutes) {
-      setError(`INSUFFICIENT ATMOSPHERE — ${currentTotalMinutes}M REQUIRED, ${newTotal}M REQUESTED`);
+      setError(`Time window is too short. Required: ${currentTotalMinutes}M`);
       return;
     }
 
@@ -102,7 +102,7 @@ export const EditTimesModal: React.FC<Props> = ({
               borderTone="strong"
               style={styles.sheet}
             >
-            <Text style={styles.eyebrow}>ADJUST ENVELOPE</Text>
+            <Text style={styles.eyebrow}>ADJUST TIMES</Text>
             <Text style={styles.title}>Re-time the schedule</Text>
 
             <View style={styles.fieldRow}>
@@ -142,7 +142,7 @@ export const EditTimesModal: React.FC<Props> = ({
 
             <View style={styles.buttons}>
               <Pressable style={styles.cancelBtn} onPress={onClose}>
-                <Text style={styles.cancelBtnText}>ABORT</Text>
+                <Text style={styles.cancelBtnText}>CANCEL</Text>
               </Pressable>
               <Pressable style={styles.submitOuter} onPress={handleSubmit}>
                 <LinearGradient
@@ -151,7 +151,7 @@ export const EditTimesModal: React.FC<Props> = ({
                   end={{ x: 1, y: 1 }}
                   style={styles.submitBtn}
                 >
-                  <Text style={styles.submitBtnText}>COMMIT</Text>
+                  <Text style={styles.submitBtnText}>SAVE</Text>
                 </LinearGradient>
               </Pressable>
             </View>

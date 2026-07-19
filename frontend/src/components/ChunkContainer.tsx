@@ -114,7 +114,7 @@ export const ChunkContainer: React.FC<Props> = ({
   const handleToggleBuffer = (index: number) => {
     const updatedTasks = toggleBuffer(tasks, index);
     if (updatedTasks === tasks) {
-      Alert.alert('ERROR', 'INSUFFICIENT ATMOSPHERE FOR BUFFER');
+      Alert.alert('Error', 'Not enough unassigned time for buffer');
       return;
     }
     commitTasks(updatedTasks);
@@ -130,12 +130,12 @@ export const ChunkContainer: React.FC<Props> = ({
   const handleAddTask = () => {
     const duration = parseInt(newTaskDuration);
     if (!newTaskTitle.trim() || isNaN(duration)) {
-      Alert.alert('ERROR', 'INVALID SYSTEM DESIGNATION OR PARAMETERS');
+      Alert.alert('Error', 'Please enter a valid title and duration.');
       return;
     }
 
     if (duration > unassigned) {
-      Alert.alert('ERROR', `INSUFFICIENT ATMOSPHERE: ${unassigned}M AVAILABLE`);
+      Alert.alert('Error', `Not enough unassigned time: ${unassigned}M available`);
       return;
     }
 
@@ -280,8 +280,8 @@ const UnassignedSlot: React.FC<{ minutes: number; onPress: () => void }> = ({
               <View style={styles.slotCrossV} />
               <View style={styles.slotCrossH} />
             </View>
-            <Text style={styles.slotLabel}>INITIALIZE INSTRUMENT</Text>
-            <Text style={styles.slotMinutes}>{minutes}M VACANT</Text>
+            <Text style={styles.slotLabel}>ADD TASK</Text>
+            <Text style={styles.slotMinutes}>{minutes}M UNASSIGNED</Text>
           </View>
         </View>
       </Pressable>
@@ -338,8 +338,8 @@ const CreateTaskModal: React.FC<ModalProps> = ({
               borderTone="strong"
               style={styles.modalSheet}
             >
-            <Text style={styles.modalEyebrow}>NEW INSTRUMENT</Text>
-            <Text style={styles.modalTitle}>Designate the task</Text>
+            <Text style={styles.modalEyebrow}>NEW TASK</Text>
+            <Text style={styles.modalTitle}>Add task details</Text>
 
             <Text style={styles.fieldLabel}>NAME</Text>
             <View style={styles.fieldWrap}>
@@ -353,7 +353,7 @@ const CreateTaskModal: React.FC<ModalProps> = ({
               />
             </View>
 
-            <Text style={styles.fieldLabel}>DURATION · {unassigned}M AVAILABLE</Text>
+            <Text style={styles.fieldLabel}>DURATION · {unassigned}M UNASSIGNED</Text>
             <View style={styles.fieldWrap}>
               <TextInput
                 style={styles.input}
@@ -368,7 +368,7 @@ const CreateTaskModal: React.FC<ModalProps> = ({
 
             <View style={styles.modalButtons}>
               <Pressable style={styles.cancelBtn} onPress={onClose}>
-                <Text style={styles.cancelBtnText}>ABORT</Text>
+                <Text style={styles.cancelBtnText}>CANCEL</Text>
               </Pressable>
               <Pressable style={styles.createBtnOuter} onPress={onSubmit}>
                 <LinearGradient
@@ -377,7 +377,7 @@ const CreateTaskModal: React.FC<ModalProps> = ({
                   end={{ x: 1, y: 1 }}
                   style={styles.createBtn}
                 >
-                  <Text style={styles.createBtnText}>INITIALIZE</Text>
+                  <Text style={styles.createBtnText}>ADD</Text>
                 </LinearGradient>
               </Pressable>
             </View>
