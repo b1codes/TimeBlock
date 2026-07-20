@@ -528,9 +528,25 @@ def test_delete_missing_chunk_raises():
     # asserts the explicit existence check that preserves the API's 404.
     with pytest.raises(database.ChunkNotFound):
         database.delete_chunk("user123", "missing")
+
+
+# The next two tests are a pair and must stay adjacent and in this order. They
+# guard the reset_firestore fixture staying autouse: if isolation ever breaks,
+# the second one fails here rather than surfacing as order-dependent failures
+# scattered across unrelated tests.
+def test_isolation_probe_writes_data(firestore_client, seed_chunk):
+    seed_chunk("leak_probe", "c1")
+
+    docs = list(firestore_client.collection("users", "leak_probe", "chunks").stream())
+    assert [d.id for d in docs] == ["c1"]
+
+
+def test_isolation_probe_data_does_not_leak(firestore_client):
+    docs = list(firestore_client.collection("users", "leak_probe", "chunks").stream())
+    assert docs == []
 ```
 
-Changes from the previous version: the `timechunk_table` fixture argument is gone (data reset is autouse now); datetime assertions gained `tzinfo=timezone.utc`; and five tests were added covering user scoping, deletion, and the three not-found paths — the delete-missing case is the migration's specific regression risk and previously had no data-layer test at all.
+Changes from the previous version: the `timechunk_table` fixture argument is gone (data reset is autouse now); datetime assertions gained `tzinfo=timezone.utc`; and seven tests were added: user scoping, deletion, the three not-found paths, and the isolation probe pair. The delete-missing case is the migration's specific regression risk and previously had no data-layer test at all. The isolation pair is a standing guard on `reset_firestore` remaining autouse.
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
@@ -664,7 +680,7 @@ def delete_chunk(user_id: str, chunk_id: str) -> None:
 cd backend && FIRESTORE_EMULATOR_HOST=localhost:8081 GOOGLE_CLOUD_PROJECT=timeblock-local .venv/bin/pytest tests/test_database.py -v
 ```
 
-Expected: 9 passed.
+Expected: 11 passed.
 
 - [ ] **Step 5: Update routes.py**
 
@@ -850,7 +866,7 @@ The `.startswith(...)` timestamp assertions are unchanged and still pass — the
 cd backend && FIRESTORE_EMULATOR_HOST=localhost:8081 GOOGLE_CLOUD_PROJECT=timeblock-local .venv/bin/pytest tests -v
 ```
 
-Expected: all tests pass across `test_database.py` (9), `test_routes.py` (11), `test_main.py` (1), `test_models.py` (2).
+Expected: all tests pass across `test_database.py` (11), `test_routes.py` (11), `test_main.py` (1), `test_models.py` (2).
 
 - [ ] **Step 8: Confirm no AWS references remain in the backend source**
 
@@ -1156,7 +1172,7 @@ Expected: no output. (`docs/` is excluded because the historical specs and plans
 make down && make up && make test-backend
 ```
 
-Expected: emulator starts, then all 23 backend tests pass.
+Expected: emulator starts, then all 25 backend tests pass.
 
 - [ ] **Step 7: Commit**
 
@@ -1177,7 +1193,7 @@ emulator data is ephemeral."
 Run after all five tasks:
 
 - [ ] `make down && make up` — emulator starts and reports ready
-- [ ] `make test-backend` — 23 tests pass
+- [ ] `make test-backend` — 25 tests pass
 - [ ] `cd backend && env -u FIRESTORE_EMULATOR_HOST .venv/bin/pytest tests` — aborts with the guard message
 - [ ] `make seed-db && make dev-backend`, then `curl -H "x-user-id: user123" http://localhost:8080/chunks/` returns three chunks
 - [ ] `curl -s -o /dev/null -w "%{http_code}" -X DELETE -H "x-user-id: user123" http://localhost:8080/chunks/nope/` returns `404` (not `204` — the migration's key regression risk)
