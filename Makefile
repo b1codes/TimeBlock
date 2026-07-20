@@ -1,6 +1,6 @@
 # TimeBlock Project Makefile
 
-.PHONY: help install install-backend install-frontend up down init-db dev test-backend test-frontend
+.PHONY: help install install-backend install-frontend up down seed-db dev test-backend test-frontend
 
 # Backend configuration
 VENV = backend/.venv
@@ -12,9 +12,9 @@ PYTEST = $(VENV)/bin/pytest
 help:
 	@echo "Available commands:"
 	@echo "  Infrastructure:"
-	@echo "    up             Start local DynamoDB container"
+	@echo "    up             Start the local Firestore emulator"
 	@echo "    down           Stop and remove containers"
-	@echo "    init-db        Create local DynamoDB table (requires 'up')"
+	@echo "    seed-db        Populate the emulator with sample data (requires 'up')"
 	@echo ""
 	@echo "  Setup:"
 	@echo "    install        Install all dependencies (backend & frontend)"
@@ -43,23 +43,29 @@ install-frontend:
 
 # Docker Infrastructure
 up:
-	docker-compose up -d dynamodb-local
+	docker compose up -d firestore-emulator
+	@echo "Waiting for Firestore emulator on :8081..."
+	@for i in $$(seq 1 60); do \
+		if curl -sf http://localhost:8081/ > /dev/null 2>&1; then echo "Emulator ready."; exit 0; fi; \
+		sleep 1; \
+	done; \
+	echo "Emulator failed to start."; docker compose logs firestore-emulator; exit 1
 
 down:
-	docker-compose down
+	docker compose down
 
 # Database
-init-db:
-	@echo "Initializing local DynamoDB table..."
-	@export DYNAMODB_ENDPOINT_URL=http://localhost:8000 && $(PYTHON) backend/scripts/init_local_db.py
+seed-db: up
+	@echo "Seeding local Firestore emulator..."
+	@export FIRESTORE_EMULATOR_HOST=localhost:8081 && \
+	 export GOOGLE_CLOUD_PROJECT=timeblock-local && \
+	 $(PYTHON) backend/scripts/seed_local_db.py
 
 # Running locally
 dev-backend: up
 	@echo "Starting FastAPI backend..."
-	@export DYNAMODB_ENDPOINT_URL=http://localhost:8000 && \
-	 export AWS_ACCESS_KEY_ID=local && \
-	 export AWS_SECRET_ACCESS_KEY=local && \
-	 export AWS_DEFAULT_REGION=us-east-1 && \
+	@export FIRESTORE_EMULATOR_HOST=localhost:8081 && \
+	 export GOOGLE_CLOUD_PROJECT=timeblock-local && \
 	 cd backend && ../$(PYTHON) -m uvicorn src.main:app --reload --port 8080
 
 dev-frontend:
@@ -67,13 +73,11 @@ dev-frontend:
 	cd frontend && pnpm start
 
 # Testing
-test-backend:
+test-backend: up
 	@echo "Running backend tests..."
-	@export DYNAMODB_ENDPOINT_URL=http://localhost:8000 && \
-	 export AWS_ACCESS_KEY_ID=local && \
-	 export AWS_SECRET_ACCESS_KEY=local && \
-	 export AWS_DEFAULT_REGION=us-east-1 && \
-	 $(PYTEST) backend/tests
+	@export FIRESTORE_EMULATOR_HOST=localhost:8081 && \
+	 export GOOGLE_CLOUD_PROJECT=timeblock-local && \
+	 cd backend && ../$(PYTEST) tests
 
 test-frontend:
 	@echo "Running frontend tests..."

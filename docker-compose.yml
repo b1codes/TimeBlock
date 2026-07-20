@@ -1,25 +1,19 @@
 services:
-  dynamodb-local:
-    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
-    image: "amazon/dynamodb-local:latest"
-    container_name: dynamodb-local
+  firestore-emulator:
+    image: "google/cloud-sdk:emulators"
+    container_name: firestore-emulator
+    command: gcloud beta emulators firestore start --host-port=0.0.0.0:8081
     ports:
-      - "8000:8000"
-    volumes:
-      - "./docker/dynamodb:/home/dynamodblocal/data"
-    working_dir: /home/dynamodblocal
+      - "8081:8081"
 
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
     environment:
-      - AWS_ACCESS_KEY_ID=local
-      - AWS_SECRET_ACCESS_KEY=local
-      - AWS_DEFAULT_REGION=us-east-1
-      - DYNAMODB_ENDPOINT_URL=http://dynamodb-local:8000
-      - DYNAMODB_TABLE=TimeChunks
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8081
+      - GOOGLE_CLOUD_PROJECT=timeblock-local
     depends_on:
-      - dynamodb-local
+      - firestore-emulator
