@@ -1,101 +1,111 @@
-from google.cloud import firestore
 import os
+from datetime import datetime, timezone
 from uuid import uuid4
-from .models import TimeChunkResponse, TimeChunkCreate, Task, TimeChunkUpdate
 
-def get_table():
-    endpoint_url = os.getenv('DYNAMODB_ENDPOINT_URL')
-    if endpoint_url:
-        dynamodb = boto3.resource(
-            'dynamodb',
-            region_name=os.getenv('AWS_DEFAULT_REGION', 'us-east-1'),
-            endpoint_url=endpoint_url
-        )
-    else:
-        dynamodb = boto3.resource('dynamodb', region_name=os.getenv('AWS_DEFAULT_REGION', 'us-east-1'))
-    return dynamodb.Table(os.getenv('DYNAMODB_TABLE', 'TimeChunks'))
+from google.api_core import exceptions as google_exceptions
+from google.cloud import firestore
 
-def get_chunks(user_id: str) -> list[TimeChunkResponse]:
-    table = get_table()
-    response = table.query(
-        KeyConditionExpression=Key('user_id').eq(user_id)
-    )
-    items = response.get('Items', [])
-    while 'LastEvaluatedKey' in response:
-        response = table.query(
-            KeyConditionExpression=Key('user_id').eq(user_id),
-            ExclusiveStartKey=response['LastEvaluatedKey']
-        )
-        items.extend(response.get('Items', []))
-    return [TimeChunkResponse(**item) for item in items]
-
-def create_chunk(user_id: str, chunk: TimeChunkCreate) -> TimeChunkResponse:
-    table = get_table()
-    chunk_id = str(uuid4())
-    item = {
-        'user_id': user_id,
-        'chunk_id': chunk_id,
-        'title': chunk.title,
-        'start_time': chunk.start_time.isoformat(),
-        'end_time': chunk.end_time.isoformat(),
-        'is_template': chunk.is_template,
-        'tasks': [task.model_dump(mode='json') for task in chunk.tasks]
-    }
-    table.put_item(Item=item)
-    return TimeChunkResponse(**item)
-
-def update_chunk(user_id: str, chunk_id: str, update: TimeChunkUpdate) -> TimeChunkResponse:
-    table = get_table()
-
-    set_clauses: list[str] = []
-    values: dict[str, object] = {}
-
-    if update.tasks is not None:
-        set_clauses.append("tasks = :tasks")
-        values[":tasks"] = [task.model_dump(mode='json') for task in update.tasks]
-    if update.start_time is not None:
-        set_clauses.append("start_time = :start_time")
-        values[":start_time"] = update.start_time.isoformat()
-    if update.end_time is not None:
-        set_clauses.append("end_time = :end_time")
-        values[":end_time"] = update.end_time.isoformat()
-
-    if not set_clauses:
-        # No-op partial update: verify the chunk exists, return current state.
-        # We surface chunk-not-found by raising the same ClientError shape that
-        # update_item produces, so routes.py can keep a single 404 handler.
-        response = table.get_item(Key={'user_id': user_id, 'chunk_id': chunk_id})
-        item = response.get('Item')
-        if item is None:
-            raise botocore.exceptions.ClientError(
-                {'Error': {'Code': 'ConditionalCheckFailedException', 'Message': 'Chunk not found'}},
-                'GetItem'
-            )
-        return TimeChunkResponse(**item)
-
-    response = table.update_item(
-        Key={'user_id': user_id, 'chunk_id': chunk_id},
-        UpdateExpression="SET " + ", ".join(set_clauses),
-        ExpressionAttributeValues=values,
-        ConditionExpression="attribute_exists(chunk_id)",
-        ReturnValues="ALL_NEW"
-    )
-    return TimeChunkResponse(**response.get('Attributes', {}))
-
-def delete_chunk(user_id: str, chunk_id: str):
-    table = get_table()
-    table.delete_item(
-        Key={'user_id': user_id, 'chunk_id': chunk_id},
-        ConditionExpression="attribute_exists(chunk_id)"
-    )
-
-_client = None
+from .models import TimeChunkCreate, TimeChunkResponse, TimeChunkUpdate
 
 
-def get_client():
+class ChunkNotFound(Exception):
+    """Raised when a chunk does not exist for the given user.
+
+    Keeps the HTTP layer independent of the storage backend: routes catch this
+    rather than inspecting Firestore's exception types.
+    """
+
+
+_client: firestore.Client | None = None
+
+
+def get_client() -> firestore.Client:
+    """Return the shared Firestore client.
+
+    The client holds a long-lived gRPC channel and is designed to be reused, so
+    it is built once per process rather than per request. Under Mangum/Lambda a
+    warm container reuses this across invocations.
+
+    When FIRESTORE_EMULATOR_HOST is set, google-cloud-firestore routes to the
+    emulator automatically.
+    """
     global _client
     if _client is None:
         _client = firestore.Client(
             project=os.getenv("GOOGLE_CLOUD_PROJECT", "timeblock-local")
         )
     return _client
+
+
+def _chunks(user_id: str) -> firestore.CollectionReference:
+    # Path segments are passed separately rather than interpolated, so a user_id
+    # cannot inject extra path components.
+    return get_client().collection("users", user_id, "chunks")
+
+
+def _to_utc(value: datetime) -> datetime:
+    """Normalize to UTC-aware. Naive values are assumed to already be UTC."""
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _to_response(user_id: str, chunk_id: str, data: dict) -> TimeChunkResponse:
+    # user_id and chunk_id live in the document path, not in the document body,
+    # so identity has a single source of truth.
+    return TimeChunkResponse(user_id=user_id, chunk_id=chunk_id, **data)
+
+
+def get_chunks(user_id: str) -> list[TimeChunkResponse]:
+    return [
+        _to_response(user_id, doc.id, doc.to_dict())
+        for doc in _chunks(user_id).stream()
+    ]
+
+
+def create_chunk(user_id: str, chunk: TimeChunkCreate) -> TimeChunkResponse:
+    chunk_id = str(uuid4())
+    data = {
+        "title": chunk.title,
+        "start_time": _to_utc(chunk.start_time),
+        "end_time": _to_utc(chunk.end_time),
+        "is_template": chunk.is_template,
+        "tasks": [task.model_dump(mode="json") for task in chunk.tasks],
+    }
+    _chunks(user_id).document(chunk_id).set(data)
+    return _to_response(user_id, chunk_id, data)
+
+
+def update_chunk(user_id: str, chunk_id: str, update: TimeChunkUpdate) -> TimeChunkResponse:
+    doc_ref = _chunks(user_id).document(chunk_id)
+
+    changes: dict[str, object] = {}
+    if update.tasks is not None:
+        changes["tasks"] = [task.model_dump(mode="json") for task in update.tasks]
+    if update.start_time is not None:
+        changes["start_time"] = _to_utc(update.start_time)
+    if update.end_time is not None:
+        changes["end_time"] = _to_utc(update.end_time)
+
+    if changes:
+        try:
+            doc_ref.update(changes)
+        except google_exceptions.NotFound as exc:
+            raise ChunkNotFound(chunk_id) from exc
+
+    # Firestore's update() returns a WriteResult, not the document, so there is
+    # no ReturnValues="ALL_NEW" equivalent -- the state has to be re-read. That
+    # read doubles as the existence check for an empty (no-op) update.
+    snapshot = doc_ref.get()
+    if not snapshot.exists:
+        raise ChunkNotFound(chunk_id)
+    return _to_response(user_id, chunk_id, snapshot.to_dict())
+
+
+def delete_chunk(user_id: str, chunk_id: str) -> None:
+    doc_ref = _chunks(user_id).document(chunk_id)
+    # Firestore deletes are idempotent: deleting a missing document succeeds
+    # silently. The API contract promises a 404, so check first.
+    if not doc_ref.get().exists:
+        raise ChunkNotFound(chunk_id)
+    doc_ref.delete()
