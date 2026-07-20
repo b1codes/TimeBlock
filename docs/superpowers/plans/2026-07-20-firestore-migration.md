@@ -323,27 +323,43 @@ The second test is the important one: it proves `reset_firestore` actually runs 
 make up && cd backend && FIRESTORE_EMULATOR_HOST=localhost:8081 GOOGLE_CLOUD_PROJECT=timeblock-local .venv/bin/pytest tests/test_conftest_smoke.py -v
 ```
 
-Expected: FAIL — `ImportError: cannot import name 'get_client' from 'src.database'`. `get_client` does not exist until Task 3. This confirms the fixture wiring is reached.
+Expected: FAIL — `ModuleNotFoundError: No module named 'boto3'`.
 
-- [ ] **Step 4: Add a temporary `get_client` so the smoke test can pass**
+This is the honest pre-edit state and is worth understanding rather than working around. Task 1 rebuilt the venv without `boto3`, but `database.py` still has `import boto3` on line 1. Python executes a module top-down, so the import fails there — it never reaches the missing `get_client`. Step 4 fixes both problems at once.
 
-Append to `backend/src/database.py` (the DynamoDB code stays for now; Task 3 replaces the whole file):
+- [ ] **Step 4: Swap the imports and add a temporary `get_client`**
+
+In `backend/src/database.py`, replace the first two lines:
 
 ```python
-import os as _os
-from google.cloud import firestore as _firestore
+import boto3
+import botocore.exceptions
+```
 
+with:
+
+```python
+from google.cloud import firestore
+```
+
+Then append to the same file:
+
+```python
 _client = None
 
 
 def get_client():
     global _client
     if _client is None:
-        _client = _firestore.Client(
-            project=_os.getenv("GOOGLE_CLOUD_PROJECT", "timeblock-local")
+        _client = firestore.Client(
+            project=os.getenv("GOOGLE_CLOUD_PROJECT", "timeblock-local")
         )
     return _client
 ```
+
+The existing DynamoDB functions still *reference* `boto3` and `botocore`, but only inside function bodies, which Python does not evaluate at import time. Nothing calls them before Task 3 overwrites the file, so the module now imports cleanly despite being temporarily inconsistent. `os` is already imported at the top of the file.
+
+`routes.py` still has `import botocore.exceptions` and will fail the same way — that is fine, because nothing imports `routes` until Task 3 Step 7, after Step 5 has rewritten it.
 
 - [ ] **Step 5: Run the smoke test again**
 
@@ -1062,6 +1078,8 @@ In `.github/workflows/ci.yml`, replace the `backend-test` job's `Run Tests` step
 ```
 
 The `DYNAMODB_ENDPOINT_URL: ""` env entry is removed. `ubuntu-latest` runners ship with Docker Compose v2, so no setup action is needed. The emulator takes roughly 6 seconds to start; the 60-second ceiling is headroom, and the failure branch dumps logs rather than timing out silently. The `frontend-test` and `infra-check` jobs are unchanged.
+
+Expect this job to get slower. `moto` was a pip install; `google/cloud-sdk:emulators` is a ~1 GB image that a cold runner must pull on every run. That is the price of testing against real Firestore semantics instead of a reimplementation. If it becomes annoying, the fix is caching the image layer or switching to a slimmer emulator image — not reverting to a mock.
 
 - [ ] **Step 2: Update the README**
 
