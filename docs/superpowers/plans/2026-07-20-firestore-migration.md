@@ -17,7 +17,7 @@
 - **Emulator project ID is `timeblock-local`** everywhere (compose, Makefile, CI, conftest, seed script).
 - **Environment variables:** `FIRESTORE_EMULATOR_HOST` and `GOOGLE_CLOUD_PROJECT`. Every `DYNAMODB_*`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_DEFAULT_REGION` reference in `docker-compose.yml`, `Makefile`, and `.github/workflows/ci.yml` is removed.
 - **Do not modify** `infra/*.tf` or anything under `frontend/`. The AWS deployment is knowingly left broken; GCP infra is separate follow-up work.
-- **Do not change** `backend/src/models.py` or any `response_model` in `routes.py`. The API contract stays fixed apart from timestamps gaining a `+00:00` offset.
+- **Do not change** `backend/src/models.py` or any `response_model` in `routes.py`. The API contract stays fixed apart from timestamps gaining a `Z` UTC designator.
 - **Timestamps** are normalized to UTC-aware before writing. Firestore returns `DatetimeWithNanoseconds` (a `datetime` subclass, always tz-aware).
 - Run all `pytest` commands from the repo root using `backend/.venv/bin/pytest` with `backend/pytest.ini` (which sets `pythonpath = .` relative to `backend/`), i.e. `cd backend && .venv/bin/pytest tests`.
 
@@ -858,7 +858,7 @@ def test_delete_missing_chunk(client):
     assert response.json()["detail"] == "Chunk not found"
 ```
 
-The `.startswith(...)` timestamp assertions are unchanged and still pass — they tolerate the new `+00:00` suffix. The last two tests are new: `DELETE` had no route-level coverage at all, and `test_delete_missing_chunk` is what would catch a silent 404-to-204 regression.
+The `.startswith(...)` timestamp assertions are unchanged and still pass — they tolerate the new `Z` suffix. The last two tests are new: `DELETE` had no route-level coverage at all, and `test_delete_missing_chunk` is what would catch a silent 404-to-204 regression.
 
 - [ ] **Step 7: Run the full backend suite**
 
@@ -1032,7 +1032,7 @@ In one terminal: `make dev-backend`. In another:
 curl -s -H "x-user-id: user123" http://localhost:8080/chunks/ | head -c 400
 ```
 
-Expected: a JSON array of three chunks with `start_time` values ending in `+00:00`.
+Expected: a JSON array of three chunks with `start_time` values ending in `Z`.
 
 - [ ] **Step 6: Commit**
 

@@ -51,11 +51,11 @@ users/{user_id}
 This mirrors partition/sort-key semantics directly: listing a user's chunks is an unfiltered collection stream requiring no composite index, and ownership becomes structural — a chunk cannot be read through another user's path.
 
 ### Timestamps
-Incoming datetimes are normalized to UTC-aware before writing; naive datetimes are assumed to be UTC. Firestore returns tz-aware `DatetimeWithNanoseconds` values, which Pydantic serializes with an explicit `+00:00` offset.
+Incoming datetimes are normalized to UTC-aware before writing; naive datetimes are assumed to be UTC. Firestore returns tz-aware `DatetimeWithNanoseconds` values, which Pydantic v2 serializes with a trailing `Z`.
 
-This changes the wire format: `"2026-07-20T14:00:00"` becomes `"2026-07-20T14:00:00+00:00"`. The frontend parses `start_time`/`end_time` with date-fns `parseISO` (`ChunkListScreen.tsx:188`), which handles offsets natively, and `ApiClient` already sends `Z`-suffixed values — so no frontend change is required.
+This changes the wire format: `"2026-07-20T14:00:00"` becomes `"2026-07-20T14:00:00Z"` (Pydantic v2 serializes UTC-aware datetimes with the compact `Z` designator, not a `+00:00` offset — verified against the built models). The frontend parses `start_time`/`end_time` with date-fns `parseISO` (`ChunkListScreen.tsx:188`), which handles offsets natively, and `ApiClient` already sends `Z`-suffixed values — so no frontend change is required.
 
-The change is nonetheless real and worth stating: `parseISO` reads an offsetless string as *local* time and an offset-bearing string as UTC. Applied to existing production data this would shift every rendered time by the viewer's UTC offset. It is safe here only because the affected data lives exclusively in an ephemeral local emulator.
+The change is nonetheless real and worth stating: `parseISO` reads an offsetless string as *local* time and a `Z`-suffixed string as UTC. Applied to existing production data this would shift every rendered time by the viewer's UTC offset. It is safe here only because the affected data lives exclusively in an ephemeral local emulator.
 
 ## Backend Design
 
