@@ -33,7 +33,7 @@ jobs:
       - name: Wait for Firestore Emulator
         run: |
           for i in $(seq 1 60); do
-            if curl -sf http://localhost:8081/ > /dev/null 2>&1; then
+            if curl -sf http://localhost:8082/ > /dev/null 2>&1; then
               echo "Emulator ready after ${i}s."
               exit 0
             fi
@@ -45,7 +45,7 @@ jobs:
 
       - name: Run Tests
         env:
-          FIRESTORE_EMULATOR_HOST: localhost:8081
+          FIRESTORE_EMULATOR_HOST: localhost:8082
           GOOGLE_CLOUD_PROJECT: timeblock-local
         run: |
           cd backend

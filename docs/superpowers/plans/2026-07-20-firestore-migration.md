@@ -4,7 +4,7 @@
 
 **Goal:** Move the FastAPI backend's data layer from DynamoDB to Google Cloud Firestore, replacing the DynamoDB Local container and `moto` mocks with the Firestore emulator for both local development and CI.
 
-**Architecture:** `backend/src/database.py` is rewritten against `google-cloud-firestore` using a `users/{user_id}/chunks/{chunk_id}` subcollection, keeping its existing function signatures so `routes.py` changes only in how it detects "not found". A new `ChunkNotFound` domain exception replaces the current `botocore.ClientError` inspection, decoupling the HTTP layer from the storage SDK. The Firestore emulator runs as a `docker-compose` service on port 8081 and backs every test run.
+**Architecture:** `backend/src/database.py` is rewritten against `google-cloud-firestore` using a `users/{user_id}/chunks/{chunk_id}` subcollection, keeping its existing function signatures so `routes.py` changes only in how it detects "not found". A new `ChunkNotFound` domain exception replaces the current `botocore.ClientError` inspection, decoupling the HTTP layer from the storage SDK. The Firestore emulator runs as a `docker-compose` service on port 8082 and backs every test run.
 
 **Tech Stack:** Python 3.11, FastAPI, Pydantic v2, `google-cloud-firestore` 2.28+, pytest, httpx, Docker Compose, `google/cloud-sdk:emulators`.
 
@@ -13,7 +13,7 @@
 
 ## Global Constraints
 
-- **Emulator port is 8081**, not the conventional 8080 — the backend already uses 8080.
+- **Emulator port is 8082**, not the conventional 8080 (the backend already uses 8080) and not 8081 (Metro/Expo's default bundler port, pinned in `.vscode/launch.json`).
 - **Emulator project ID is `timeblock-local`** everywhere (compose, Makefile, CI, conftest, seed script).
 - **Environment variables:** `FIRESTORE_EMULATOR_HOST` and `GOOGLE_CLOUD_PROJECT`. Every `DYNAMODB_*`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_DEFAULT_REGION` reference in `docker-compose.yml`, `Makefile`, and `.github/workflows/ci.yml` is removed.
 - **Do not modify** `infra/*.tf` or anything under `frontend/`. The AWS deployment is knowingly left broken; GCP infra is separate follow-up work.
@@ -27,7 +27,7 @@ These were confirmed empirically against `google/cloud-sdk:emulators` with `goog
 
 | Behavior | Verified result |
 |---|---|
-| `GET http://localhost:8081/` | Returns `Ok` — use as the readiness probe |
+| `GET http://localhost:8082/` | Returns `Ok` — use as the readiness probe |
 | Emulator cold start | ~6 seconds |
 | Naive `datetime` written | Silently coerced to UTC-aware on read |
 | `.update()` on a missing document | Raises `google.api_core.exceptions.NotFound` |
@@ -60,7 +60,7 @@ Replaces the DynamoDB container and AWS SDKs with the Firestore emulator and cli
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: a `firestore-emulator` compose service on port 8081; `make up`, `make down`; env vars `FIRESTORE_EMULATOR_HOST=localhost:8081` and `GOOGLE_CLOUD_PROJECT=timeblock-local`.
+- Produces: a `firestore-emulator` compose service on port 8082; `make up`, `make down`; env vars `FIRESTORE_EMULATOR_HOST=localhost:8082` and `GOOGLE_CLOUD_PROJECT=timeblock-local`.
 
 - [ ] **Step 1: Replace the AWS dependencies**
 
@@ -104,9 +104,9 @@ services:
   firestore-emulator:
     image: "google/cloud-sdk:emulators"
     container_name: firestore-emulator
-    command: gcloud beta emulators firestore start --host-port=0.0.0.0:8081
+    command: gcloud beta emulators firestore start --host-port=0.0.0.0:8082
     ports:
-      - "8081:8081"
+      - "8082:8082"
 
   backend:
     build:
@@ -115,20 +115,20 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8081
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8082
       - GOOGLE_CLOUD_PROJECT=timeblock-local
     depends_on:
       - firestore-emulator
 ```
 
-Note the `backend` service uses the compose network hostname `firestore-emulator:8081`, while host-side commands (Makefile, CI) use `localhost:8081`. The emulator has no volume mount: it is in-memory only and cannot persist data.
+Note the `backend` service uses the compose network hostname `firestore-emulator:8082`, while host-side commands (Makefile, CI) use `localhost:8082`. The emulator has no volume mount: it is in-memory only and cannot persist data.
 
 - [ ] **Step 4: Verify the emulator boots**
 
 ```bash
 docker compose up -d firestore-emulator
-for i in $(seq 1 60); do curl -sf http://localhost:8081/ >/dev/null && echo "READY" && break; sleep 1; done
-curl -s http://localhost:8081/
+for i in $(seq 1 60); do curl -sf http://localhost:8082/ >/dev/null && echo "READY" && break; sleep 1; done
+curl -s http://localhost:8082/
 ```
 
 Expected: `READY` within ~10 seconds, then `Ok`.
@@ -140,9 +140,9 @@ In `Makefile`, replace the `up`, `init-db`, `dev-backend`, and `test-backend` ta
 ```makefile
 up:
 	docker compose up -d firestore-emulator
-	@echo "Waiting for Firestore emulator on :8081..."
+	@echo "Waiting for Firestore emulator on :8082..."
 	@for i in $$(seq 1 60); do \
-		if curl -sf http://localhost:8081/ > /dev/null 2>&1; then echo "Emulator ready."; exit 0; fi; \
+		if curl -sf http://localhost:8082/ > /dev/null 2>&1; then echo "Emulator ready."; exit 0; fi; \
 		sleep 1; \
 	done; \
 	echo "Emulator failed to start."; docker compose logs firestore-emulator; exit 1
@@ -152,19 +152,19 @@ down:
 
 seed-db: up
 	@echo "Seeding local Firestore emulator..."
-	@export FIRESTORE_EMULATOR_HOST=localhost:8081 && \
+	@export FIRESTORE_EMULATOR_HOST=localhost:8082 && \
 	 export GOOGLE_CLOUD_PROJECT=timeblock-local && \
 	 $(PYTHON) backend/scripts/seed_local_db.py
 
 dev-backend: up
 	@echo "Starting FastAPI backend..."
-	@export FIRESTORE_EMULATOR_HOST=localhost:8081 && \
+	@export FIRESTORE_EMULATOR_HOST=localhost:8082 && \
 	 export GOOGLE_CLOUD_PROJECT=timeblock-local && \
 	 cd backend && ../$(PYTHON) -m uvicorn src.main:app --reload --port 8080
 
 test-backend: up
 	@echo "Running backend tests..."
-	@export FIRESTORE_EMULATOR_HOST=localhost:8081 && \
+	@export FIRESTORE_EMULATOR_HOST=localhost:8082 && \
 	 export GOOGLE_CLOUD_PROJECT=timeblock-local && \
 	 cd backend && ../$(PYTEST) tests
 ```
@@ -193,8 +193,9 @@ git add backend/requirements.txt docker-compose.yml Makefile
 git commit -m "build: replace DynamoDB Local with the Firestore emulator
 
 Swap boto3/moto for google-cloud-firestore and run the Firestore
-emulator on port 8081 (8080 is taken by the backend). The emulator is
-in-memory only, so no volume mount replaces the old docker/dynamodb one."
+emulator on port 8082 (8080 is taken by the backend, 8081 is Metro's
+default bundler port). The emulator is in-memory only, so no volume
+mount replaces the old docker/dynamodb one."
 ```
 
 ---
@@ -320,7 +321,7 @@ The second test is the important one: it proves `reset_firestore` actually runs 
 - [ ] **Step 3: Run the smoke test**
 
 ```bash
-make up && cd backend && FIRESTORE_EMULATOR_HOST=localhost:8081 GOOGLE_CLOUD_PROJECT=timeblock-local .venv/bin/pytest tests/test_conftest_smoke.py -v
+make up && cd backend && FIRESTORE_EMULATOR_HOST=localhost:8082 GOOGLE_CLOUD_PROJECT=timeblock-local .venv/bin/pytest tests/test_conftest_smoke.py -v
 ```
 
 Expected: FAIL — `ModuleNotFoundError: No module named 'boto3'`.
@@ -364,7 +365,7 @@ The existing DynamoDB functions still *reference* `boto3` and `botocore`, but on
 - [ ] **Step 5: Run the smoke test again**
 
 ```bash
-cd backend && FIRESTORE_EMULATOR_HOST=localhost:8081 GOOGLE_CLOUD_PROJECT=timeblock-local .venv/bin/pytest tests/test_conftest_smoke.py -v
+cd backend && FIRESTORE_EMULATOR_HOST=localhost:8082 GOOGLE_CLOUD_PROJECT=timeblock-local .venv/bin/pytest tests/test_conftest_smoke.py -v
 ```
 
 Expected: 2 passed.
@@ -551,7 +552,7 @@ Changes from the previous version: the `timechunk_table` fixture argument is gon
 - [ ] **Step 2: Run the tests to verify they fail**
 
 ```bash
-cd backend && FIRESTORE_EMULATOR_HOST=localhost:8081 GOOGLE_CLOUD_PROJECT=timeblock-local .venv/bin/pytest tests/test_database.py -v
+cd backend && FIRESTORE_EMULATOR_HOST=localhost:8082 GOOGLE_CLOUD_PROJECT=timeblock-local .venv/bin/pytest tests/test_database.py -v
 ```
 
 Expected: FAIL — `AttributeError: module 'src.database' has no attribute 'ChunkNotFound'` (collection errors on the `pytest.raises` tests, failures elsewhere).
@@ -677,7 +678,7 @@ def delete_chunk(user_id: str, chunk_id: str) -> None:
 - [ ] **Step 4: Run the data-layer tests**
 
 ```bash
-cd backend && FIRESTORE_EMULATOR_HOST=localhost:8081 GOOGLE_CLOUD_PROJECT=timeblock-local .venv/bin/pytest tests/test_database.py -v
+cd backend && FIRESTORE_EMULATOR_HOST=localhost:8082 GOOGLE_CLOUD_PROJECT=timeblock-local .venv/bin/pytest tests/test_database.py -v
 ```
 
 Expected: 11 passed.
@@ -863,7 +864,7 @@ The `.startswith(...)` timestamp assertions are unchanged and still pass — the
 - [ ] **Step 7: Run the full backend suite**
 
 ```bash
-cd backend && FIRESTORE_EMULATOR_HOST=localhost:8081 GOOGLE_CLOUD_PROJECT=timeblock-local .venv/bin/pytest tests -v
+cd backend && FIRESTORE_EMULATOR_HOST=localhost:8082 GOOGLE_CLOUD_PROJECT=timeblock-local .venv/bin/pytest tests -v
 ```
 
 Expected: all tests pass across `test_database.py` (11), `test_routes.py` (11), `test_main.py` (1), `test_models.py` (2).
@@ -1074,7 +1075,7 @@ In `.github/workflows/ci.yml`, replace the `backend-test` job's `Run Tests` step
       - name: Wait for Firestore Emulator
         run: |
           for i in $(seq 1 60); do
-            if curl -sf http://localhost:8081/ > /dev/null 2>&1; then
+            if curl -sf http://localhost:8082/ > /dev/null 2>&1; then
               echo "Emulator ready after ${i}s."
               exit 0
             fi
@@ -1086,7 +1087,7 @@ In `.github/workflows/ci.yml`, replace the `backend-test` job's `Run Tests` step
 
       - name: Run Tests
         env:
-          FIRESTORE_EMULATOR_HOST: localhost:8081
+          FIRESTORE_EMULATOR_HOST: localhost:8082
           GOOGLE_CLOUD_PROJECT: timeblock-local
         run: |
           cd backend
@@ -1112,7 +1113,7 @@ Replace the backend "Run the server" step (step 4) with:
 ```markdown
 4.  **Start the Firestore emulator and run the server:**
     ```bash
-    make up        # starts the Firestore emulator on :8081
+    make up        # starts the Firestore emulator on :8082
     make seed-db   # optional: populate sample data
     make dev-backend
     ```

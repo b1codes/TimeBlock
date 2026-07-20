@@ -28,7 +28,7 @@ A tactile, zero-sum time blocking application built with React Native (Expo) and
     ```
 4.  **Start the Firestore emulator and run the server:**
     ```bash
-    make up        # starts the Firestore emulator on :8081
+    make up        # starts the Firestore emulator on :8082
     make seed-db   # optional: populate sample data
     make dev-backend
     ```

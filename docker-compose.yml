@@ -2,9 +2,9 @@ services:
   firestore-emulator:
     image: "google/cloud-sdk:emulators"
     container_name: firestore-emulator
-    command: gcloud beta emulators firestore start --host-port=0.0.0.0:8081
+    command: gcloud beta emulators firestore start --host-port=0.0.0.0:8082
     ports:
-      - "8081:8081"
+      - "8082:8082"
 
   backend:
     build:
@@ -13,7 +13,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8081
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8082
       - GOOGLE_CLOUD_PROJECT=timeblock-local
     depends_on:
       - firestore-emulator

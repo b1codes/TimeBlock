@@ -44,9 +44,9 @@ install-frontend:
 # Docker Infrastructure
 up:
 	docker compose up -d firestore-emulator
-	@echo "Waiting for Firestore emulator on :8081..."
+	@echo "Waiting for Firestore emulator on :8082..."
 	@for i in $$(seq 1 60); do \
-		if curl -sf http://localhost:8081/ > /dev/null 2>&1; then echo "Emulator ready."; exit 0; fi; \
+		if curl -sf http://localhost:8082/ > /dev/null 2>&1; then echo "Emulator ready."; exit 0; fi; \
 		sleep 1; \
 	done; \
 	echo "Emulator failed to start."; docker compose logs firestore-emulator; exit 1
@@ -57,14 +57,14 @@ down:
 # Database
 seed-db: up
 	@echo "Seeding local Firestore emulator..."
-	@export FIRESTORE_EMULATOR_HOST=localhost:8081 && \
+	@export FIRESTORE_EMULATOR_HOST=localhost:8082 && \
 	 export GOOGLE_CLOUD_PROJECT=timeblock-local && \
 	 $(PYTHON) backend/scripts/seed_local_db.py
 
 # Running locally
 dev-backend: up
 	@echo "Starting FastAPI backend..."
-	@export FIRESTORE_EMULATOR_HOST=localhost:8081 && \
+	@export FIRESTORE_EMULATOR_HOST=localhost:8082 && \
 	 export GOOGLE_CLOUD_PROJECT=timeblock-local && \
 	 cd backend && ../$(PYTHON) -m uvicorn src.main:app --reload --port 8080
 
@@ -75,7 +75,7 @@ dev-frontend:
 # Testing
 test-backend: up
 	@echo "Running backend tests..."
-	@export FIRESTORE_EMULATOR_HOST=localhost:8081 && \
+	@export FIRESTORE_EMULATOR_HOST=localhost:8082 && \
 	 export GOOGLE_CLOUD_PROJECT=timeblock-local && \
 	 cd backend && ../$(PYTEST) tests
 

@@ -14,13 +14,11 @@
         "8080"
       ],
       "env": {
-        "DYNAMODB_ENDPOINT_URL": "http://localhost:8000",
-        "AWS_ACCESS_KEY_ID": "local",
-        "AWS_SECRET_ACCESS_KEY": "local",
-        "AWS_DEFAULT_REGION": "us-east-1"
+        "FIRESTORE_EMULATOR_HOST": "localhost:8082",
+        "GOOGLE_CLOUD_PROJECT": "timeblock-local"
       },
       "python": "${workspaceFolder}/backend/.venv/bin/python3",
-      "preLaunchTask": "DynamoDB: Start and Initialize",
+      "preLaunchTask": "Firestore: Start and Seed",
       "jinja": true
     },
     {
@@ -33,13 +31,11 @@
         "tests"
       ],
       "env": {
-        "DYNAMODB_ENDPOINT_URL": "http://localhost:8000",
-        "AWS_ACCESS_KEY_ID": "local",
-        "AWS_SECRET_ACCESS_KEY": "local",
-        "AWS_DEFAULT_REGION": "us-east-1"
+        "FIRESTORE_EMULATOR_HOST": "localhost:8082",
+        "GOOGLE_CLOUD_PROJECT": "timeblock-local"
       },
       "python": "${workspaceFolder}/backend/.venv/bin/python3",
-      "preLaunchTask": "DynamoDB: Start and Initialize"
+      "preLaunchTask": "Firestore: Start and Seed"
     },
     {
       "name": "Frontend: Start Expo Dev Server",

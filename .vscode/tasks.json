@@ -2,9 +2,9 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "DynamoDB: Start Container",
+      "label": "Firestore: Start Emulator",
       "type": "shell",
-      "command": "docker-compose up -d dynamodb-local",
+      "command": "make up",
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
@@ -12,9 +12,9 @@
       }
     },
     {
-      "label": "DynamoDB: Initialize Table",
+      "label": "Firestore: Seed Database",
       "type": "shell",
-      "command": "make init-db",
+      "command": "make seed-db",
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
@@ -22,9 +22,9 @@
       }
     },
     {
-      "label": "DynamoDB: Start and Initialize",
+      "label": "Firestore: Start and Seed",
       "type": "shell",
-      "command": "docker-compose up -d dynamodb-local && for i in {1..10}; do nc -z localhost 8000 && break || sleep 1; done && make init-db",
+      "command": "make up && make seed-db",
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
@@ -32,7 +32,7 @@
       }
     },
     {
-      "label": "DynamoDB: Stop Container",
+      "label": "Firestore: Stop Emulator",
       "type": "shell",
       "command": "docker-compose down",
       "problemMatcher": [],

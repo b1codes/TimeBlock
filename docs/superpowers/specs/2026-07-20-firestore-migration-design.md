@@ -89,10 +89,10 @@ Function signatures are otherwise unchanged, so `routes.py` needs no other modif
 `docker-compose.yml` replaces `dynamodb-local` with:
 
 - **Image:** `google/cloud-sdk:emulators`
-- **Command:** `gcloud beta emulators firestore start --host-port=0.0.0.0:8081`
-- **Port:** `8081:8081`
+- **Command:** `gcloud beta emulators firestore start --host-port=0.0.0.0:8082`
+- **Port:** `8082:8082`
 
-Port 8081 is used rather than the emulator's conventional 8080, which the backend already occupies.
+Port 8082 is used rather than the emulator's conventional 8080, which the backend already occupies, and rather than 8081, which is Metro/Expo's default bundler port (pinned in `.vscode/launch.json`).
 
 ### Data is ephemeral
 The DynamoDB Local service mounted `./docker/dynamodb` so local data survived restarts. **The `gcloud` Firestore emulator is in-memory only** and offers no equivalent persistence flag; all local data is lost when the container stops.
@@ -102,7 +102,7 @@ This raises the importance of seeding. `backend/scripts/init_local_db.py` become
 ### Environment variables
 `DYNAMODB_ENDPOINT_URL`, `DYNAMODB_TABLE`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_DEFAULT_REGION` are replaced everywhere by:
 
-- `FIRESTORE_EMULATOR_HOST=localhost:8081`
+- `FIRESTORE_EMULATOR_HOST=localhost:8082`
 - `GOOGLE_CLOUD_PROJECT=timeblock-local`
 
 ## Testing
@@ -127,7 +127,7 @@ The backend job gains `docker compose up -d firestore-emulator` and a readiness 
 
 ## Verification
 
-- `docker compose up -d firestore-emulator` starts cleanly and the emulator answers on 8081.
+- `docker compose up -d firestore-emulator` starts cleanly and the emulator answers on 8082.
 - `make test-backend` passes with all existing assertions intact, including both 404 cases.
 - `make seed-db` populates sample chunks; `make dev-backend` serves them via `GET /chunks/`.
 - The Expo frontend loads, renders, and edits chunks against the local backend with no frontend code changes.

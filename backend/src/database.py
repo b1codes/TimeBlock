@@ -38,8 +38,9 @@ def get_client() -> firestore.Client:
 
 
 def _chunks(user_id: str) -> firestore.CollectionReference:
-    # Path segments are passed separately rather than interpolated, so a user_id
-    # cannot inject extra path components.
+    # Path segments are passed separately rather than interpolated into a
+    # single string -- a tidier construction, though not itself a validation
+    # step.
     return get_client().collection("users", user_id, "chunks")
 
 
