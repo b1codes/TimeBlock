@@ -6,7 +6,7 @@ A tactile, zero-sum time blocking application built with React Native (Expo) and
 
 - `frontend/`: React Native mobile application using Expo.
 - `backend/`: FastAPI Python server.
-- `infra/`: Terraform infrastructure (AWS Lambda, DynamoDB).
+- `infra/`: Terraform infrastructure (AWS Lambda — Firestore migration pending).
 - `docs/`: Design specifications and implementation plans.
 
 ## Getting Started
@@ -26,11 +26,16 @@ A tactile, zero-sum time blocking application built with React Native (Expo) and
     ```bash
     pip install -r requirements.txt
     ```
-4.  **Run the server:**
+4.  **Start the Firestore emulator and run the server:**
     ```bash
-    uvicorn src.main:app --reload
+    make up        # starts the Firestore emulator on :8081
+    make seed-db   # optional: populate sample data
+    make dev-backend
     ```
-    The API will be available at `http://localhost:8000`.
+    The API will be available at `http://localhost:8080`.
+
+    The emulator is in-memory: local data is lost when the container stops,
+    so re-run `make seed-db` after `make down`.
 
 ### Frontend (Expo)
 
@@ -61,5 +66,5 @@ A tactile, zero-sum time blocking application built with React Native (Expo) and
 
 ## Development
 
-- **Tests:** Run `pnpm test` in the `frontend` directory or `pytest` in the `backend` directory.
+- **Tests:** Run `pnpm test` in the `frontend` directory, or `make test-backend` from the repo root (this starts the Firestore emulator automatically — backend tests require it).
 - **Architecture:** Decoupled UI logic (Reanimated) from the logic layer (`dragMath`) and API layer (`ApiClient`).

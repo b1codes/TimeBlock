@@ -27,11 +27,29 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
 
+      - name: Start Firestore Emulator
+        run: docker compose up -d firestore-emulator
+
+      - name: Wait for Firestore Emulator
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8081/ > /dev/null 2>&1; then
+              echo "Emulator ready after ${i}s."
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Emulator failed to start within 60s."
+          docker compose logs firestore-emulator
+          exit 1
+
       - name: Run Tests
         env:
-          DYNAMODB_ENDPOINT_URL: ""
+          FIRESTORE_EMULATOR_HOST: localhost:8081
+          GOOGLE_CLOUD_PROJECT: timeblock-local
         run: |
-          pytest backend/tests
+          cd backend
+          pytest tests
 
   frontend-test:
     name: Frontend Lint & Test
