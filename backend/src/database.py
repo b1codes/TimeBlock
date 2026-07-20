@@ -1,7 +1,5 @@
-import boto3
-import botocore.exceptions
+from google.cloud import firestore
 import os
-from boto3.dynamodb.conditions import Key
 from uuid import uuid4
 from .models import TimeChunkResponse, TimeChunkCreate, Task, TimeChunkUpdate
 
@@ -90,3 +88,14 @@ def delete_chunk(user_id: str, chunk_id: str):
         Key={'user_id': user_id, 'chunk_id': chunk_id},
         ConditionExpression="attribute_exists(chunk_id)"
     )
+
+_client = None
+
+
+def get_client():
+    global _client
+    if _client is None:
+        _client = firestore.Client(
+            project=os.getenv("GOOGLE_CLOUD_PROJECT", "timeblock-local")
+        )
+    return _client
