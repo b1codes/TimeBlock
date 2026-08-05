@@ -168,7 +168,7 @@ docker/
 
 # Agent
 .agents/
-agent.md
+AGENTS.md
 
 # b1CodingTool Generated
 CLAUDE.md
