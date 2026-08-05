@@ -3,6 +3,19 @@ from typing import List
 from uuid import UUID, uuid4
 from datetime import datetime
 
+class UserBase(BaseModel):
+    email: str | None = None
+    display_name: str | None = None
+
+class UserCreate(UserBase):
+    user_id: str
+
+class UserResponse(UserBase):
+    user_id: str
+    email: str | None = None
+    display_name: str | None = None
+    created_at: datetime
+
 class Task(BaseModel):
     task_id: str
     title: str
@@ -28,3 +41,4 @@ class TimeChunkUpdate(BaseModel):
     tasks: List[Task] | None = None
     start_time: datetime | None = None
     end_time: datetime | None = None
+

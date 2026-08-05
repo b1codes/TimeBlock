@@ -112,6 +112,63 @@ def test_delete_missing_chunk_raises():
         database.delete_chunk("user123", "missing")
 
 
+def test_user_database_operations():
+    user = database.create_or_update_user(
+        models.UserCreate(user_id="user_a", email="a@example.com", display_name="User A")
+    )
+    assert user.user_id == "user_a"
+    assert user.email == "a@example.com"
+    assert user.display_name == "User A"
+
+    fetched = database.get_user("user_a")
+    assert fetched.user_id == "user_a"
+    assert fetched.email == "a@example.com"
+
+    auto_user = database.get_or_create_user("user_b")
+    assert auto_user.user_id == "user_b"
+
+    fetched_auto = database.get_user("user_b")
+    assert fetched_auto.user_id == "user_b"
+
+
+def test_user_not_found_raises():
+    with pytest.raises(database.UserNotFound):
+        database.get_user("nonexistent_user")
+
+
+def test_invalid_user_id_raises():
+    with pytest.raises(database.InvalidUserId):
+        database.get_chunks("")
+
+    with pytest.raises(database.InvalidUserId):
+        database.create_chunk("   ", _chunk_data())
+
+    with pytest.raises(database.InvalidUserId):
+        database.get_user("")
+
+
+def test_update_chunk_cross_user_isolation():
+    user_a_chunk = database.create_chunk("user_a", _chunk_data(title="User A Chunk"))
+
+    with pytest.raises(database.ChunkNotFound):
+        database.update_chunk(
+            "user_b",
+            user_a_chunk.chunk_id,
+            models.TimeChunkUpdate(title="Hacked"),
+        )
+
+
+def test_delete_chunk_cross_user_isolation():
+    user_a_chunk = database.create_chunk("user_a", _chunk_data(title="User A Chunk"))
+
+    with pytest.raises(database.ChunkNotFound):
+        database.delete_chunk("user_b", user_a_chunk.chunk_id)
+
+    # Confirm user_a's chunk remains intact
+    assert len(database.get_chunks("user_a")) == 1
+
+
+
 # The next two tests are a pair and must stay adjacent and in this order. They
 # guard the reset_firestore fixture staying autouse: if isolation ever breaks,
 # the second one fails here rather than surfacing as order-dependent failures

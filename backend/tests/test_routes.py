@@ -124,3 +124,68 @@ def test_delete_missing_chunk(client):
     response = client.delete("/chunks/missing_chunk/", headers={"x-user-id": "user123"})
     assert response.status_code == 404
     assert response.json()["detail"] == "Chunk not found"
+
+
+def test_missing_or_empty_x_user_id_header(client):
+    # Missing header returns 422
+    response = client.get("/chunks/")
+    assert response.status_code == 422
+
+    # Empty header returns 400
+    response = client.get("/chunks/", headers={"x-user-id": ""})
+    assert response.status_code == 400
+
+    response = client.get("/chunks/", headers={"x-user-id": "   "})
+    assert response.status_code == 400
+
+
+def test_user_endpoints(client):
+    # GET /users/me auto-creates user
+    response = client.get("/users/me", headers={"x-user-id": "user_me"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["user_id"] == "user_me"
+
+    # POST /users/ sets profile
+    payload = {"user_id": "user_me", "email": "me@example.com", "display_name": "Me Myself"}
+    response = client.post("/users/", json=payload, headers={"x-user-id": "user_me"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["email"] == "me@example.com"
+    assert data["display_name"] == "Me Myself"
+
+    # GET /users/{user_id}
+    response = client.get("/users/user_me", headers={"x-user-id": "user_me"})
+    assert response.status_code == 200
+    assert response.json()["email"] == "me@example.com"
+
+    # GET /users/nonexistent returns 404
+    response = client.get("/users/nobody", headers={"x-user-id": "user_me"})
+    assert response.status_code == 404
+
+
+def test_cross_user_patch_and_delete_isolation(client, seed_chunk):
+    seed_chunk("user_owner", "chunk_private")
+
+    # Other user trying to PATCH owner's chunk gets 404
+    payload = {
+        "tasks": [
+            {"task_id": "t1", "title": "Tamper", "duration_minutes": 20, "min_duration": 10}
+        ]
+    }
+    response = client.patch(
+        "/chunks/chunk_private/", json=payload, headers={"x-user-id": "user_attacker"}
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Chunk not found"
+
+    # Other user trying to DELETE owner's chunk gets 404
+    response = client.delete("/chunks/chunk_private/", headers={"x-user-id": "user_attacker"})
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Chunk not found"
+
+    # Owner can still fetch their chunk
+    response = client.get("/chunks/", headers={"x-user-id": "user_owner"})
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+

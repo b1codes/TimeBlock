@@ -5,15 +5,25 @@ from uuid import uuid4
 from google.api_core import exceptions as google_exceptions
 from google.cloud import firestore
 
-from .models import TimeChunkCreate, TimeChunkResponse, TimeChunkUpdate
+from .models import (
+    TimeChunkCreate,
+    TimeChunkResponse,
+    TimeChunkUpdate,
+    UserCreate,
+    UserResponse,
+)
 
 
 class ChunkNotFound(Exception):
-    """Raised when a chunk does not exist for the given user.
+    """Raised when a chunk does not exist for the given user."""
 
-    Keeps the HTTP layer independent of the storage backend: routes catch this
-    rather than inspecting Firestore's exception types.
-    """
+
+class UserNotFound(Exception):
+    """Raised when a user document does not exist."""
+
+
+class InvalidUserId(Exception):
+    """Raised when a user_id is empty, whitespace, or invalid."""
 
 
 _client: firestore.Client | None = None
@@ -37,11 +47,72 @@ def get_client() -> firestore.Client:
     return _client
 
 
+def _validate_user_id(user_id: str) -> str:
+    if not user_id or not user_id.strip():
+        raise InvalidUserId("user_id cannot be empty or whitespace.")
+    return user_id.strip()
+
+
+def _users() -> firestore.CollectionReference:
+    return get_client().collection("users")
+
+
 def _chunks(user_id: str) -> firestore.CollectionReference:
-    # Path segments are passed separately rather than interpolated into a
-    # single string -- a tidier construction, though not itself a validation
-    # step.
-    return get_client().collection("users", user_id, "chunks")
+    valid_id = _validate_user_id(user_id)
+    return get_client().collection("users", valid_id, "chunks")
+
+
+def get_user(user_id: str) -> UserResponse:
+    valid_id = _validate_user_id(user_id)
+    snapshot = _users().document(valid_id).get()
+    if not snapshot.exists:
+        raise UserNotFound(valid_id)
+    data = snapshot.to_dict() or {}
+    created_at = data.get("created_at") or datetime.now(timezone.utc)
+    return UserResponse(
+        user_id=valid_id,
+        email=data.get("email"),
+        display_name=data.get("display_name"),
+        created_at=created_at,
+    )
+
+
+def create_or_update_user(user: UserCreate) -> UserResponse:
+    valid_id = _validate_user_id(user.user_id)
+    doc_ref = _users().document(valid_id)
+    snapshot = doc_ref.get()
+    now = datetime.now(timezone.utc)
+    if snapshot.exists:
+        data = snapshot.to_dict() or {}
+        created_at = data.get("created_at", now)
+        doc_ref.update({
+            "email": user.email,
+            "display_name": user.display_name,
+            "updated_at": now,
+        })
+    else:
+        created_at = now
+        doc_ref.set({
+            "email": user.email,
+            "display_name": user.display_name,
+            "created_at": created_at,
+            "updated_at": now,
+        })
+    return UserResponse(
+        user_id=valid_id,
+        email=user.email,
+        display_name=user.display_name,
+        created_at=created_at,
+    )
+
+
+def get_or_create_user(user_id: str) -> UserResponse:
+    valid_id = _validate_user_id(user_id)
+    try:
+        return get_user(valid_id)
+    except UserNotFound:
+        return create_or_update_user(UserCreate(user_id=valid_id))
+
 
 
 def _to_utc(value: datetime) -> datetime:

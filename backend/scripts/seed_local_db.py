@@ -38,6 +38,8 @@ def seed() -> None:
 
     print(f"Seeding Firestore emulator at {os.environ['FIRESTORE_EMULATOR_HOST']}...")
 
+    database.create_or_update_user(models.UserCreate(user_id=SEED_USER_ID, email="user123@example.com", display_name="Sample User"))
+
     existing = database.get_chunks(SEED_USER_ID)
     if existing:
         print(f"User {SEED_USER_ID} already has {len(existing)} chunk(s). Nothing to do.")
