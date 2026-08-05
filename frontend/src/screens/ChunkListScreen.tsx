@@ -34,6 +34,7 @@ import { TimeChunk } from '../types';
 import { theme } from '../styles/theme';
 import { NoiseBackground } from '../components/NoiseBackground';
 import { GlassSurface } from '../components/GlassSurface';
+import { SkeletonTaskCard } from '../components/SkeletonTaskCard';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchChunksThunk, createChunkThunk, deleteChunkThunk } from '../store/chunksSlice';
 
@@ -151,14 +152,20 @@ export const ChunkListScreen: React.FC<Props> = ({ navigation }) => {
         onRefresh={loadChunks}
         refreshing={loading}
         ListEmptyComponent={
-          !loading ? (
+          loading ? (
+            <View testID="chunks-loading-skeletons">
+              <SkeletonTaskCard />
+              <SkeletonTaskCard />
+              <SkeletonTaskCard />
+            </View>
+          ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>NO ACTIVE SCHEDULES</Text>
               <Text style={styles.emptySub}>
                 Create a schedule to start planning.
               </Text>
             </View>
-          ) : null
+          )
         }
       />
 
@@ -303,8 +310,8 @@ const ThermalFab: React.FC<{ bottom: number; onPress: () => void }> = ({
     } else {
       breath.value = withRepeat(
         withSequence(
-          withTiming(1, { duration: 2200, easing: Easing.bezier(0.23, 1, 0.32, 1) }),
-          withTiming(0.45, { duration: 2200, easing: Easing.bezier(0.23, 1, 0.32, 1) }),
+          withTiming(1, { duration: 2200, easing: Easing.bezier(0.45, 0, 0.55, 1) }),
+          withTiming(0.45, { duration: 2200, easing: Easing.bezier(0.45, 0, 0.55, 1) }),
         ),
         -1,
         false,
@@ -315,7 +322,17 @@ const ThermalFab: React.FC<{ bottom: number; onPress: () => void }> = ({
   const animatedScale = useAnimatedStyle(() => ({
     transform: [{ scale: press.value }],
   }));
-  const animatedHalo = useAnimatedStyle(() => ({ opacity: breath.value }));
+
+  const animatedHalo = useAnimatedStyle(() => {
+    if (reduceMotionEnabled) {
+      return { opacity: 0.7, transform: [{ scale: 1 }] };
+    }
+    const breathingScale = interpolate(breath.value, [0.45, 1], [0.98, 1.12]);
+    return {
+      opacity: breath.value,
+      transform: [{ scale: breathingScale }],
+    };
+  });
 
   return (
     <Animated.View style={[styles.fab, { bottom }, animatedScale]}>
@@ -420,14 +437,27 @@ const CreateScheduleModal: React.FC<ScheduleModalProps> = ({
               value={title}
               onChangeText={setTitle}
               autoFocus
+              accessibilityLabel="Schedule name input field"
+              accessibilityHint="Enter a title for the new schedule block"
             />
           </View>
 
           <View style={styles.modalButtons}>
-            <Pressable style={styles.cancelBtn} onPress={onClose}>
+            <Pressable
+              style={styles.cancelBtn}
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel creating schedule"
+            >
               <Text style={styles.cancelBtnText}>CANCEL</Text>
             </Pressable>
-            <Pressable style={styles.createBtnOuter} onPress={onSubmit}>
+            <Pressable
+              style={styles.createBtnOuter}
+              onPress={onSubmit}
+              accessibilityRole="button"
+              accessibilityLabel="Create schedule"
+              accessibilityHint="Creates the new schedule block and opens editor"
+            >
               <LinearGradient
                 colors={theme.colors.thermal.glow}
                 start={{ x: 0, y: 0 }}
@@ -683,9 +713,9 @@ const styles = StyleSheet.create({
   fieldWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: theme.colors.glass.base,
     borderRadius: theme.layout.radius.s,
-    borderWidth: 1,
+    borderWidth: theme.layout.hairline,
     borderColor: theme.colors.glass.border,
     paddingHorizontal: theme.spacing.m,
     marginBottom: theme.spacing.l,

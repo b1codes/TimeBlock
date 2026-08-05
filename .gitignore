@@ -193,3 +193,8 @@ AGENTS.override.md
 .agents/skills/b1-edge-case.md
 .agents/skills/b1-reconcile.md
 .agents/.b1-snapshots/
+
+# LLC Proprietary Protection Protocol (Double-Lock Strategy)
+.agents/modules/llc-ip-protection/
+.agents/modules/llc-react/
+.agents/modules/llc-standards/

@@ -118,6 +118,8 @@ export const EditTimesModal: React.FC<Props> = ({
                     keyboardType="numbers-and-punctuation"
                     autoFocus
                     maxLength={5}
+                    accessibilityLabel="Schedule start time in 24 hour format"
+                    accessibilityHint="Enter start time as hours and minutes, e.g. 09:00"
                   />
                 </View>
               </View>
@@ -133,18 +135,39 @@ export const EditTimesModal: React.FC<Props> = ({
                     onChangeText={setEndInput}
                     keyboardType="numbers-and-punctuation"
                     maxLength={5}
+                    accessibilityLabel="Schedule end time in 24 hour format"
+                    accessibilityHint="Enter end time as hours and minutes, e.g. 17:00"
                   />
                 </View>
               </View>
             </View>
 
-            {error && <Text style={styles.errorText}>{error}</Text>}
+            {error && (
+              <Text
+                style={styles.errorText}
+                accessibilityRole="alert"
+                accessibilityLiveRegion="assertive"
+              >
+                {error}
+              </Text>
+            )}
 
             <View style={styles.buttons}>
-              <Pressable style={styles.cancelBtn} onPress={onClose}>
+              <Pressable
+                style={styles.cancelBtn}
+                onPress={onClose}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel editing times"
+              >
                 <Text style={styles.cancelBtnText}>CANCEL</Text>
               </Pressable>
-              <Pressable style={styles.submitOuter} onPress={handleSubmit}>
+              <Pressable
+                style={styles.submitOuter}
+                onPress={handleSubmit}
+                accessibilityRole="button"
+                accessibilityLabel="Save schedule times"
+                accessibilityHint="Saves the updated start and end times for the schedule"
+              >
                 <LinearGradient
                   colors={theme.colors.thermal.glow}
                   start={{ x: 0, y: 0 }}
@@ -213,9 +236,9 @@ const styles = StyleSheet.create({
   fieldWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: theme.colors.glass.base,
     borderRadius: theme.layout.radius.s,
-    borderWidth: 1,
+    borderWidth: theme.layout.hairline,
     borderColor: theme.colors.glass.border,
     paddingHorizontal: theme.spacing.m,
   },

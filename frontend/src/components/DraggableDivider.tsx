@@ -35,7 +35,7 @@ const TERMINAL_HALO_COLORS = [
   'rgba(20, 90, 200, 0)',
 ] as const;
 
-export const DraggableDivider: React.FC<Props> = ({
+const DraggableDividerBase: React.FC<Props> = ({
   onDrag,
   onDragEnd,
   bufferDuration = 0,
@@ -228,3 +228,5 @@ const styles = StyleSheet.create({
     color: theme.colors.textTertiary,
   },
 });
+
+export const DraggableDivider = React.memo(DraggableDividerBase);

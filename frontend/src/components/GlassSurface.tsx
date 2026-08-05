@@ -78,7 +78,10 @@ export const GlassSurface: React.FC<Props> = ({
       <LinearGradient
         colors={[theme.colors.glass.specular, 'transparent']}
         locations={[0, 1]}
-        style={styles.specular}
+        style={[
+          styles.specular,
+          { left: Math.min(radius * 0.5, 12), right: Math.min(radius * 0.5, 12) },
+        ]}
         pointerEvents="none"
       />
 
@@ -105,8 +108,6 @@ const styles = StyleSheet.create({
   specular: {
     position: 'absolute',
     top: 0,
-    left: 8,
-    right: 8,
     height: 1.5,
   },
 });

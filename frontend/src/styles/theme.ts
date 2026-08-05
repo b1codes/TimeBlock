@@ -111,6 +111,6 @@ export const theme = {
     h2: { fontFamily: 'Montserrat-Bold', fontSize: 18, letterSpacing: 1.5 },
     body: { fontFamily: 'OpenSans-Regular', fontSize: 14, letterSpacing: 0.2 },
     caption: { fontFamily: 'OpenSans-Light', fontSize: 11, letterSpacing: 1.8 },
-    micro: { fontFamily: 'OpenSans-Light', fontSize: 9, letterSpacing: 2.2 },
+    micro: { fontFamily: 'OpenSans-Regular', fontSize: 11, letterSpacing: 1.8 },
   },
 };

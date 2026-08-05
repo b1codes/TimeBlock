@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -58,74 +58,87 @@ export const ChunkContainer: React.FC<Props> = ({
   );
   const unassigned = Math.max(0, totalDurationMinutes - currentTotal) || 0;
 
-  const commitTasks = (updated: Task[]) => {
-    onTasksChange(updated);
-    apiClient.debouncedUpdateChunk(initialChunk.chunk_id, { tasks: updated });
-  };
+  const commitTasks = useCallback(
+    (updated: Task[]) => {
+      onTasksChange(updated);
+      apiClient.debouncedUpdateChunk(initialChunk.chunk_id, { tasks: updated });
+    },
+    [apiClient, initialChunk.chunk_id, onTasksChange]
+  );
 
-  const handleDrag = (index: number, deltaMinutes: number) => {
-    const updatedTasks = calculateZeroSumTasks(tasks, index, deltaMinutes);
-    if (updatedTasks === tasks) return;
+  const handleDrag = useCallback(
+    (index: number, deltaMinutes: number) => {
+      const updatedTasks = calculateZeroSumTasks(tasks, index, deltaMinutes);
+      if (updatedTasks === tasks) return;
 
-    const newLimitedIds = new Set<string>();
-    if (
-      updatedTasks[index].duration_minutes === tasks[index].duration_minutes &&
-      deltaMinutes !== 0
-    ) {
-      newLimitedIds.add(tasks[index].task_id);
-    }
-    if (
-      updatedTasks[index + 1].duration_minutes === tasks[index + 1].duration_minutes &&
-      deltaMinutes !== 0
-    ) {
-      newLimitedIds.add(tasks[index + 1].task_id);
-    }
+      const newLimitedIds = new Set<string>();
+      if (
+        updatedTasks[index].duration_minutes === tasks[index].duration_minutes &&
+        deltaMinutes !== 0
+      ) {
+        newLimitedIds.add(tasks[index].task_id);
+      }
+      if (
+        updatedTasks[index + 1].duration_minutes === tasks[index + 1].duration_minutes &&
+        deltaMinutes !== 0
+      ) {
+        newLimitedIds.add(tasks[index + 1].task_id);
+      }
 
-    setLimitedTaskIds(newLimitedIds);
-    commitTasks(updatedTasks);
-  };
+      setLimitedTaskIds(newLimitedIds);
+      commitTasks(updatedTasks);
+    },
+    [commitTasks, tasks]
+  );
 
-  const handleLastDrag = (deltaMinutes: number) => {
-    if (tasks.length === 0) return;
-    // Recompute unassigned from current tasks instead of using the render closure,
-    // so rapid multi-tick drags within a render cycle don't compute against a stale ceiling.
-    const liveUnassigned = Math.max(
-      0,
-      totalDurationMinutes -
-        tasks.reduce(
-          (s, t) => s + (t.duration_minutes || 0) + (t.buffer_after_minutes || 0),
-          0,
-        ),
-    );
-    const updatedTasks = calculateLastTaskWithUnassigned(tasks, deltaMinutes, liveUnassigned);
-    if (updatedTasks === tasks) {
-      const lastId = tasks[tasks.length - 1].task_id;
-      setLimitedTaskIds(new Set([lastId]));
-      return;
-    }
+  const handleLastDrag = useCallback(
+    (deltaMinutes: number) => {
+      if (tasks.length === 0) return;
+      const liveUnassigned = Math.max(
+        0,
+        totalDurationMinutes -
+          tasks.reduce(
+            (s, t) => s + (t.duration_minutes || 0) + (t.buffer_after_minutes || 0),
+            0
+          )
+      );
+      const updatedTasks = calculateLastTaskWithUnassigned(tasks, deltaMinutes, liveUnassigned);
+      if (updatedTasks === tasks) {
+        const lastId = tasks[tasks.length - 1].task_id;
+        setLimitedTaskIds(new Set([lastId]));
+        return;
+      }
+      setLimitedTaskIds(new Set());
+      commitTasks(updatedTasks);
+    },
+    [commitTasks, tasks, totalDurationMinutes]
+  );
+
+  const handleDragEnd = useCallback(() => {
     setLimitedTaskIds(new Set());
-    commitTasks(updatedTasks);
-  };
+  }, []);
 
-  const handleDragEnd = () => {
-    setLimitedTaskIds(new Set());
-  };
+  const handleToggleBuffer = useCallback(
+    (index: number) => {
+      const updatedTasks = toggleBuffer(tasks, index);
+      if (updatedTasks === tasks) {
+        Alert.alert('Error', 'Not enough unassigned time for buffer');
+        return;
+      }
+      commitTasks(updatedTasks);
+    },
+    [commitTasks, tasks]
+  );
 
-  const handleToggleBuffer = (index: number) => {
-    const updatedTasks = toggleBuffer(tasks, index);
-    if (updatedTasks === tasks) {
-      Alert.alert('Error', 'Not enough unassigned time for buffer');
-      return;
-    }
-    commitTasks(updatedTasks);
-  };
-
-  const handleTitleChange = (taskId: string, newTitle: string) => {
-    const updatedTasks = tasks.map((t) =>
-      t.task_id === taskId ? { ...t, title: newTitle } : t,
-    );
-    commitTasks(updatedTasks);
-  };
+  const handleTitleChange = useCallback(
+    (taskId: string, newTitle: string) => {
+      const updatedTasks = tasks.map((t) =>
+        t.task_id === taskId ? { ...t, title: newTitle } : t
+      );
+      commitTasks(updatedTasks);
+    },
+    [commitTasks, tasks]
+  );
 
   const handleAddTask = () => {
     const duration = parseInt(newTaskDuration);
@@ -245,6 +258,9 @@ const UnassignedSlot: React.FC<{ minutes: number; onPress: () => void }> = ({
           });
         }}
         style={styles.slotPressable}
+        accessibilityRole="button"
+        accessibilityLabel={`Add task. ${minutes} minutes unassigned.`}
+        accessibilityHint="Double tap to open create task modal"
       >
         <View style={styles.slotSurface}>
           {/* Sunken glass tone — feels like a recessed bay */}
@@ -350,6 +366,8 @@ const CreateTaskModal: React.FC<ModalProps> = ({
                 value={title}
                 onChangeText={setTitle}
                 autoFocus
+                accessibilityLabel="Task name field"
+                accessibilityHint="Enter the title for the new task"
               />
             </View>
 
@@ -362,15 +380,28 @@ const CreateTaskModal: React.FC<ModalProps> = ({
                 value={duration}
                 onChangeText={setDuration}
                 keyboardType="numeric"
+                accessibilityLabel="Task duration field in minutes"
+                accessibilityHint={`Enter duration up to ${unassigned} minutes`}
               />
               <Text style={styles.fieldUnit}>M</Text>
             </View>
 
             <View style={styles.modalButtons}>
-              <Pressable style={styles.cancelBtn} onPress={onClose}>
+              <Pressable
+                style={styles.cancelBtn}
+                onPress={onClose}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel adding task"
+              >
                 <Text style={styles.cancelBtnText}>CANCEL</Text>
               </Pressable>
-              <Pressable style={styles.createBtnOuter} onPress={onSubmit}>
+              <Pressable
+                style={styles.createBtnOuter}
+                onPress={onSubmit}
+                accessibilityRole="button"
+                accessibilityLabel="Add task"
+                accessibilityHint="Creates the new task in this schedule"
+              >
                 <LinearGradient
                   colors={theme.colors.thermal.glow}
                   start={{ x: 0, y: 0 }}
@@ -501,7 +532,7 @@ const styles = StyleSheet.create({
   fieldWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: theme.colors.glass.base,
     borderRadius: theme.layout.radius.s,
     borderWidth: theme.layout.hairline,
     borderColor: theme.colors.glass.border,

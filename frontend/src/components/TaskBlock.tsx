@@ -19,7 +19,7 @@ interface Props extends Task {
   onTitleChange?: (newTitle: string) => void;
 }
 
-export const TaskBlock: React.FC<Props> = ({
+const TaskBlockBase: React.FC<Props> = ({
   task_id,
   title,
   duration_minutes,
@@ -244,3 +244,5 @@ const styles = StyleSheet.create({
     marginLeft: 3,
   },
 });
+
+export const TaskBlock = React.memo(TaskBlockBase);
